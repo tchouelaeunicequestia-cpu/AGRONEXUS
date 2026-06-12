@@ -1,0 +1,10 @@
+steps:
+    -name: Checkout Code
+        uses: actions/checkout@v4
+        -name:Display Respitory Information
+        run: |
+        echo "AgroNexus CI Running"
+        pwd
+        ls -la
+        -name:Sucess Message
+        run:echo"CI Pipeline completed successfully!"
