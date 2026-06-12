@@ -1,0 +1,18 @@
+services:
+  backend:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    command: node server.js
+    ports:
+      - "3000:3000"
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: agro_user
+      POSTGRES_PASSWORD: agro_password
+      POSTGRES_DB: agro_db
+    ports:
+      - "5432:5432"

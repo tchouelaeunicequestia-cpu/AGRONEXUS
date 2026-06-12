@@ -7,18 +7,20 @@ on:
     branches: [main]
 
 jobs:
-  verify-project:
+  backend-check:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Display Repository Information
-        run: |
-          echo "AgroNexus CI Running"
-          pwd
-          ls -la
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
-      - name: Success Message
-        run: echo "CI Pipeline Successful"
+      - name: Check backend file
+        run: test -f backend/server.js
+
+      - name: Run backend test
+        run: node backend/server.js &
