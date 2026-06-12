@@ -1,10 +1,24 @@
-steps:
-    -name: Checkout Code
+name: AgroNexus CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify-project:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
         uses: actions/checkout@v4
-        -name:Display Respitory Information
+
+      - name: Display Repository Information
         run: |
-        echo "AgroNexus CI Running"
-        pwd
-        ls -la
-        -name:Sucess Message
-        run:echo"CI Pipeline completed successfully!"
+          echo "AgroNexus CI Running"
+          pwd
+          ls -la
+
+      - name: Success Message
+        run: echo "CI Pipeline Successful"
