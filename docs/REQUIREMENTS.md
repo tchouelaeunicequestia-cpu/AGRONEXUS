@@ -22,13 +22,17 @@ The system functional requirements are structured into seven core Epics:
 ### Epic 3: Sales, Escrow & Payment Processing
 - **FR3.1**: The system shall automatically lock buyer funds in an admin-held escrow account upon order creation.
 - **FR3.2**: The escrow engine shall calculate total depository using the formula:  
-  $$\text{Total Depository} = \text{Item Cost} + \text{Transport Fee} + (2 \times \text{Deposit Buffer})$$
-- **FR3.3**: The system shall disburse escrow funds upon verified delivery: 85% to the Farmer and 15% to the Transporter.
+  - **Freight Delivery**:  
+    $$\text{Total Depository} = \text{Item Cost} + \text{Transport Fee} + (2 \times \text{Deposit Buffer})$$  
+  - **Direct Buyer Self-Pickup**:  
+    $$\text{Total Depository} = \text{Item Cost} + (1 \times \text{Deposit Buffer}) \quad [\text{Transport Fee} = 0.00]$$  
+  - **Mobile Money Fee Coverage**: The `Deposit Buffer` automatically incorporates a 1.5% MTN MoMo & Orange Money cashout fee buffer, guaranteeing farmers receive 100% net produce price.
+- **FR3.3**: The system shall disburse escrow funds upon verified delivery: 85% to Farmer and 15% to Transporter (or 100% to Farmer for Self-Pickup).
 - **FR3.4**: The system shall provide an admin arbitration workflow for escrow disputes, backed by IoT storage logs and delivery audit trails.
 
 ### Epic 4: Transport & Logistics Dispatch
 - **FR4.1**: Transporters shall view available delivery jobs filtered by proximity and vehicle freight capacity.
-- **FR4.2**: The system shall track order delivery state transitions (`PENDING` $\rightarrow$ `HELD_IN_ESCROW` $\rightarrow$ `DISPATCHED` $\rightarrow$ `IN_TRANSIT` $\rightarrow$ `DELIVERED` $\rightarrow$ `COMPLETED`).
+- **FR4.2**: The system shall track order delivery state transitions (`PENDING` $\rightarrow$ `HELD_IN_ESCROW` $\rightarrow$ `DISPATCHED` $\rightarrow$ `IN_TRANSIT` $\rightarrow$ `DELIVERED` $\rightarrow$ `COMPLETED`, or `READY_FOR_PICKUP` $\rightarrow$ `SELF_PICKUP_COMPLETED`).
 - **FR4.3**: Transporters and buyers shall submit cryptographic or multi-party delivery confirmations upon order handover.
 
 ### Epic 5: Storage Conservation & Cyber-Physical IoT Telemetry
@@ -54,17 +58,3 @@ The system functional requirements are structured into seven core Epics:
 - **NFR3 (Scalability)**: Backend microservices must maintain stateless session management to enable seamless horizontal scaling.
 - **NFR4 (Availability & Uptime)**: Telemetry ingestion endpoints must maintain $99.9\%$ uptime to ensure zero data gaps in storage monitoring.
 - **NFR5 (AI Accuracy)**: RAG guardrail rejection accuracy for out-of-domain prompts must exceed $98\%$, and hallucination rates must stay under $2\%$.
-
----
-
-## 3. Functional Requirements Traceability Matrix
-
-| Requirement ID | Epic Name | Target Role | Primary Module / Controller | Verification Method |
-| :--- | :--- | :--- | :--- | :--- |
-| **FR1.1 - FR1.4** | Auth & Identity | All Roles | `AuthController` / `JwtService` | Integration Tests |
-| **FR2.1 - FR2.3** | Spatial Catalog | Farmer, Buyer | `ProductController` / PostGIS GiST | Spatial Benchmark Tests |
-| **FR3.1 - FR3.4** | Sales & Escrow | Buyer, Admin | `EscrowController` / `EscrowEngine` | JUnit Business Rule Tests |
-| **FR4.1 - FR4.3** | Transport Dispatch | Transporter | `LogisticsController` | End-to-End Flow |
-| **FR5.1 - FR5.3** | IoT Telemetry | Farmer, Agronomist | `TelemetryController` / ESP32 Firmware | Hardware Simulation |
-| **FR6.1 - FR6.3** | Guarded RAG AI | All Roles | `AiAssistantController` / `pgvector` | AI Benchmark (500 Queries) |
-| **FR7.1 - FR7.2** | Self-Service | All Roles | `UserController` | Component Unit Tests |
