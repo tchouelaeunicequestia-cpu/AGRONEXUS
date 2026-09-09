@@ -121,15 +121,8 @@ public class AuthController {
 
         User user = userOpt.get();
 
-        // NOTE: JWT token will be issued by JwtService (wired in SecurityConfig)
-        // This placeholder returns user info. JwtService is implemented in Step 12.
-        return ResponseEntity.ok(Map.of(
-                "userId",   user.getId(),
-                "fullName", user.getFullName(),
-                "email",    user.getEmail(),
-                "role",     user.getRole().name(),
-                "token",    "JWT_TOKEN_ISSUED_BY_JWTSERVICE",
-                "message",  "Login successful."
+return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(Map.of(
+                "error", "JWT issuance is not implemented yet."
         ));
     }
 }
