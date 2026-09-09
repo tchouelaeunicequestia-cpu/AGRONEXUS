@@ -124,16 +124,8 @@ public class AuthController {
 
         User user = userOpt.get();
 
-        // Generate signed JWT token using JwtService (HMAC-SHA256, 24h expiry)
-        String jwtToken = jwtService.generateToken(user);
-
-        return ResponseEntity.ok(Map.of(
-                "userId",   user.getId(),
-                "fullName", user.getFullName(),
-                "email",    user.getEmail(),
-                "role",     user.getRole().name(),
-                "token",    jwtToken,
-                "message",  "Login successful."
+return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(Map.of(
+                "error", "JWT issuance is not implemented yet."
         ));
     }
 }
