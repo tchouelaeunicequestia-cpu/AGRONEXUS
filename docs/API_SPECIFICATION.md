@@ -23,8 +23,8 @@ Content-Type: application/json
 - **Role Required**: `BUYER`
 - **Description**: Places an order, routes payments to official Mobile Money Escrow Wallets, and dispatches automated admin alerts containing the **Farmer's direct phone number**.
 - **Official Escrow Wallets**:
-  - **Orange Money Escrow Wallet**: `+237694111111`
-  - **MTN Mobile Money Escrow Wallet**: `+237651301111`
+  - **Orange Money Escrow Wallet**: `+237694002750`
+  - **MTN Mobile Money Escrow Wallet**: `+237651305141`
 - **Request Body**:
 ```json
 {
@@ -46,10 +46,9 @@ Content-Type: application/json
   "depositBuffer": 6350.00,
   "totalEscrowLocked": 107700.00,
   "isSelfPickup": false,
-  "orangeMoneyEscrowWallet": "+237694111111",
-  "mtnMomoEscrowWallet": "+237651301111",
-  "farmerPhoneNumber": "+237690000001",
-  "adminNotificationText": "🔔 [AGRONEXUS ESCROW ALERT]\nOrder Code: ORD-2026-98214\nTotal Escrow Locked: 107700.00 XAF\nBuyer: Yaoundé Buyer Co. (+237690000002)\nFarmer: Eunice Tchouela (Phone: +237690000001)\nProduce: Fresh Organic Plantains (200.0 kg)\nMode: FREIGHT DELIVERY",
+  "orangeMoneyEscrowWallet": "+237694002750",
+  "mtnMomoEscrowWallet": "+237651305141",
+  "adminNotificationText": "🔔 [AGRONEXUS ESCROW ALERT]\nOrder Code: ORD-2026-98214\nTotal Escrow Locked: 107700.00 XAF\nBuyer: [Buyer Name] (Phone: +237690000002)\nFarmer: [Farmer Name] (Phone: +237690000001)\nProduce: [Product Name] ([Quantity] kg)\nMode: FREIGHT DELIVERY",
   "escrowStatus": "HELD_IN_ESCROW"
 }
 ```
