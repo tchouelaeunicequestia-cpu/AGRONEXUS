@@ -1,0 +1,70 @@
+package com.agronexus.api.entity;
+
+import jakarta.persistence.*;//jpa
+import lombok.*;//lombok
+import org.locationtech.jts.geom.Point;//postgis
+import java.time.ZonedDateTime;//time api
+
+/**
+ * ==============================================================================
+ * AgroNexus User Entity
+ * 
+ * WHY: Represents user accounts, credentials, RBAC role flags, and base GPS location.
+ * HOW: Maps to PostgreSQL 'users' table and utilizes PostGIS Point spatial geometry.
+ * ==============================================================================
+ */
+@Entity
+@Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "full_name", nullable = false, length = 100)
+    private String fullName;
+
+    @Column(name = "email", nullable = false, unique = true, length = 100)
+    private String email;
+
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, length = 20)
+    private Role role;
+
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
+    @Column(name = "is_verified")
+    private Boolean isVerified;
+
+    @Column(name = "location", columnDefinition = "geometry(Point, 4326)")
+    private Point location;
+
+    @Column(name = "created_at")
+    private ZonedDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private ZonedDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = ZonedDateTime.now();
+        updatedAt = ZonedDateTime.now();
+        if (isVerified == null) {
+            isVerified = true;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = ZonedDateTime.now();
+    }
+}
