@@ -10,9 +10,10 @@ import java.time.ZonedDateTime;
  * ==============================================================================
  * AgroNexus Order & Escrow Depository Entity
  * 
- * WHY: Manages trade orders, financial escrow deposits, and delivery tracking.
+ * WHY: Manages trade orders, financial escrow deposits, delivery freight, and self-pickup.
  * HOW: Maps to PostgreSQL 'orders' table and enforces the escrow formula:
- *      Total Depository = Item Cost + Transport Fee + (2 * Deposit Buffer)
+ *      - Freight Delivery: Total = Item Cost + Transport Fee + (2 * Deposit Buffer)
+ *      - Direct Self-Pickup: Total = Item Cost + (1 * Deposit Buffer) [Transport Fee = 0]
  * ==============================================================================
  */
 @Entity
@@ -40,8 +41,11 @@ public class Order {
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "transporter_id")
+    @JoinColumn(name = "transporter_id", nullable = true) // Nullable when buyer chooses Self-Pickup
     private User transporter;
+
+    @Column(name = "is_self_pickup", nullable = false) // True if buyer collects directly from farm
+    private Boolean isSelfPickup;
 
     @Column(name = "quantity", nullable = false)
     private Double quantity;
@@ -78,8 +82,11 @@ public class Order {
     protected void onCreate() {
         createdAt = ZonedDateTime.now();
         updatedAt = ZonedDateTime.now();
+        if (isSelfPickup == null) {
+            isSelfPickup = false;
+        }
         if (escrowStatus == null) {
-            escrowStatus = EscrowStatus.HELD_IN_ESCROW;
+            escrowStatus = isSelfPickup ? EscrowStatus.READY_FOR_PICKUP : EscrowStatus.HELD_IN_ESCROW;
         }
     }
 
