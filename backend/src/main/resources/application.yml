@@ -1,0 +1,48 @@
+# ==============================================================================
+# AgroNexus Enterprise Application Configuration
+# Defines Database Connections, PostGIS Spatial Dialects, and JWT Security
+# ==============================================================================
+
+server:
+  port: ${PORT:8080}
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: agronexus-backend
+
+  # ==============================================================================
+  # DATABASE DATASOURCE CONNECTION (Supports Supabase or Local PostgreSQL)
+  # WHY: Connects Spring Data JPA to database server.
+  # HOW: Uses JDBC URL with SSL enabled for secure cloud transactions.
+  # ==============================================================================
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://db.dchoxjkluggsdkwgtmdm.supabase.co:5432/postgres?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:fzUektKdsTLUbxX8}
+    driver-class-name: org.postgresql.Driver
+
+  # ==============================================================================
+  # JPA & HIBERNATE POSTGIS SPATIAL DIALECT
+  # WHY: Instructs Hibernate to understand PostGIS spatial geometries (Point, Polygon).
+  # HOW: Maps PostGIS ST_DWithin and ST_MakePoint spatial functions to Java.
+  # ==============================================================================
+  jpa:
+    database-platform: org.hibernate.spatial.dialect.postgis.PostgisDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+# ==============================================================================
+# SECURITY JWT TOKENS CONFIGURATION
+# WHY: Configures secret key and token expiration for stateless auth.
+# HOW: JWTs are signed with HMAC-SHA256 and valid for 24 hours.
+# ==============================================================================
+agronexus:
+  jwt:
+    secret: ${JWT_SECRET:9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b}
+    expiration-ms: 86400000 # 24 Hours in milliseconds
