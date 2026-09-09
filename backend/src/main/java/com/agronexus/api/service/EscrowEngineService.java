@@ -18,17 +18,17 @@ import java.util.UUID;
  * 
  * WHY: Enforces financial escrow rules, MoMo/Orange withdrawal fee coverage, and payouts.
  * HOW: Routes escrow deposits to official Admin Mobile Money Wallets:
- *      - Orange Money Escrow Wallet: +237 694111111
- *      - MTN MoMo Escrow Wallet:     +237 651301111
- *      Generates instant admin notifications including the Farmer's direct phone number.
+ *      - Orange Money Escrow Wallet: +237 694002750
+ *      - MTN MoMo Escrow Wallet:     +237 651305141
+ *      Generates instant admin notifications including the Farmer's direct registered phone number.
  * ==============================================================================
  */
 @Service
 public class EscrowEngineService {
 
-    // Official Admin Escrow Mobile Money Numbers
-    public static final String OFFICIAL_ORANGE_MONEY_ESCROW = "+237694111111";
-    public static final String OFFICIAL_MTN_MOMO_ESCROW     = "+237651301111";
+    // Official Admin Escrow Mobile Money Merchant Numbers
+    public static final String OFFICIAL_ORANGE_MONEY_ESCROW = "+237694002750";
+    public static final String OFFICIAL_MTN_MOMO_ESCROW     = "+237651305141";
 
     // 1.5% Standard MTN Mobile Money (MoMo) & Orange Money cashout fee rate
     private static final BigDecimal MOMO_ORANGE_CASHOUT_FEE_RATE = new BigDecimal("0.015");
@@ -88,13 +88,13 @@ public class EscrowEngineService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // Admin Notification Payload with Farmer Phone Number
+        // Admin Notification Payload with Farmer Registered Phone Number
         String adminNotification = String.format(
-            "🔔 [AGRONEXUS ESCROW ALERT]\nOrder Code: %s\nTotal Escrow Locked: %s XAF\nBuyer: %s (%s)\nFarmer: %s (Phone: %s)\nProduce: %s (%s kg)\nMode: %s",
+            "🔔 [AGRONEXUS ESCROW ALERT]\nOrder Code: %s\nTotal Escrow Locked: %s XAF\nBuyer: %s (Phone: %s)\nFarmer: %s (Phone: %s)\nProduce: %s (%s kg)\nMode: %s",
             orderCode,
             totalEscrow.toPlainString(),
             buyer.getFullName(),
-            buyer.getPhoneNumber(),
+            buyer.getPhoneNumber() != null ? buyer.getPhoneNumber() : "Not Provided",
             farmer.getFullName(),
             farmer.getPhoneNumber() != null ? farmer.getPhoneNumber() : "Not Provided",
             product.getTitle(),
