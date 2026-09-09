@@ -1,6 +1,6 @@
-# AgroNexus Documentation Hub
+# AgroNexus Documentation & Deployment Hub
 
-Welcome to the official documentation repository for **AgroNexus: An Integrated Agricultural Management and Information Platform**.
+Welcome to the official repository for **AgroNexus: An Integrated Agricultural Management and Information Platform**.
 
 AgroNexus is a comprehensive AgTech ecosystem designed to address post-harvest agricultural value chain inefficiencies in Central Africa and broader regional markets. The platform combines spatial e-commerce, automated escrow payments, cyber-physical IoT telemetry for storage monitoring, verified agronomy advisory, and domain-guarded Retrieval-Augmented Generation (RAG) AI grounded in international agricultural standards (FAO, USDA, UNECE).
 
@@ -10,6 +10,8 @@ AgroNexus is a comprehensive AgTech ecosystem designed to address post-harvest a
 
 | File | Description |
 | :--- | :--- |
+| 🚀 [DEPLOYMENT_GUIDE.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/deployment/DEPLOYMENT_GUIDE.md) | **Production Cloud Deployment Guide** (Supabase + Render + Vercel/Firebase & Docker Compose). |
+| ⚡ [supabase_setup.sql](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/deployment/supabase_setup.sql) | Production SQL Initialization & Seed Script for Supabase (PostGIS + pgvector). |
 | 📄 [PROJECT_SPECIFICATION.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/PROJECT_SPECIFICATION.md) | Project background, problem statement, research questions, objectives, scope & delimitations. |
 | 🏗️ [SYSTEM_ARCHITECTURE.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/SYSTEM_ARCHITECTURE.md) | Architectural layers, UML use cases, data flow diagrams (DFD Level-1), component models, and RBAC authorization matrix. |
 | 📋 [REQUIREMENTS.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/REQUIREMENTS.md) | Functional epics (Epics 1–7), Non-Functional Requirements (NFR1–NFR4), and Requirements Traceability Matrix. |
