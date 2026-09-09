@@ -28,6 +28,4 @@ AgroNexus is a comprehensive AgTech ecosystem designed to address post-harvest a
 - **Institution**: The ICT University, Yaoundé Campus, Cameroon
 - **Department**: Software Engineering and Artificial Intelligence
 - **Degree**: Bachelor of Science (B.Sc.) in Software Engineering and Artificial Intelligence
-- **Author**: Eunice Françoise Tchouela Quetsia (Registration No: ICTU20248912)
-- **Degree Level & Group**: Level 2, Group 2
-- **Academic Year**: August 2026
+
