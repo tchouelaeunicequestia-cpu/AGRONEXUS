@@ -21,7 +21,10 @@ Content-Type: application/json
 
 #### `POST /api/v1/orders/create`
 - **Role Required**: `BUYER`
-- **Description**: Places an order and locks total funds in admin-held escrow. Supports both Freight Delivery and Direct Buyer Self-Pickup, with 1.5% MTN MoMo / Orange Money cashout fee coverage.
+- **Description**: Places an order, routes payments to official Mobile Money Escrow Wallets, and dispatches automated admin alerts containing the **Farmer's direct phone number**.
+- **Official Escrow Wallets**:
+  - **Orange Money Escrow Wallet**: `+237694111111`
+  - **MTN Mobile Money Escrow Wallet**: `+237651301111`
 - **Request Body**:
 ```json
 {
@@ -43,6 +46,10 @@ Content-Type: application/json
   "depositBuffer": 6350.00,
   "totalEscrowLocked": 107700.00,
   "isSelfPickup": false,
+  "orangeMoneyEscrowWallet": "+237694111111",
+  "mtnMomoEscrowWallet": "+237651301111",
+  "farmerPhoneNumber": "+237690000001",
+  "adminNotificationText": "🔔 [AGRONEXUS ESCROW ALERT]\nOrder Code: ORD-2026-98214\nTotal Escrow Locked: 107700.00 XAF\nBuyer: Yaoundé Buyer Co. (+237690000002)\nFarmer: Eunice Tchouela (Phone: +237690000001)\nProduce: Fresh Organic Plantains (200.0 kg)\nMode: FREIGHT DELIVERY",
   "escrowStatus": "HELD_IN_ESCROW"
 }
 ```

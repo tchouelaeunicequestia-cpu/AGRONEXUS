@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -16,12 +17,18 @@ import java.util.UUID;
  * AgroNexus Escrow Financial Engine Service
  * 
  * WHY: Enforces financial escrow rules, MoMo/Orange withdrawal fee coverage, and payouts.
- * HOW: Calculates total locked funds including MTN/Orange Money cashout fee buffers (1.5%)
- *      and supports both Freight Delivery and Direct Buyer Self-Pickup workflows.
+ * HOW: Routes escrow deposits to official Admin Mobile Money Wallets:
+ *      - Orange Money Escrow Wallet: +237 694111111
+ *      - MTN MoMo Escrow Wallet:     +237 651301111
+ *      Generates instant admin notifications including the Farmer's direct phone number.
  * ==============================================================================
  */
 @Service
 public class EscrowEngineService {
+
+    // Official Admin Escrow Mobile Money Numbers
+    public static final String OFFICIAL_ORANGE_MONEY_ESCROW = "+237694111111";
+    public static final String OFFICIAL_MTN_MOMO_ESCROW     = "+237651301111";
 
     // 1.5% Standard MTN Mobile Money (MoMo) & Orange Money cashout fee rate
     private static final BigDecimal MOMO_ORANGE_CASHOUT_FEE_RATE = new BigDecimal("0.015");
@@ -39,15 +46,16 @@ public class EscrowEngineService {
     }
 
     /**
-     * Create Order and Lock Funds in Escrow (MTN MoMo / Orange Money compatible)
+     * Create Order and Lock Funds in Escrow with Mobile Money Notification
      */
     @Transactional
-    public Order createEscrowOrder(Long buyerId, Long productId, Double quantity, 
-                                  BigDecimal transportFee, Boolean isSelfPickup, String deliveryAddress) {
+    public Map<String, Object> createEscrowOrder(Long buyerId, Long productId, Double quantity, 
+                                                BigDecimal transportFee, Boolean isSelfPickup, String deliveryAddress) {
         User buyer = userRepository.findById(buyerId)
                 .orElseThrow(() -> new RuntimeException("Buyer not found"));
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+        User farmer = product.getFarmer();
 
         boolean selfPickup = (isSelfPickup != null && isSelfPickup);
         BigDecimal itemCost = product.getPricePerUnit().multiply(BigDecimal.valueOf(quantity));
@@ -62,8 +70,10 @@ public class EscrowEngineService {
                 itemCost.add(depositBuffer) : 
                 itemCost.add(freight).add(depositBuffer.multiply(BigDecimal.valueOf(2)));
 
+        String orderCode = "ORD-2026-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
         Order order = Order.builder()
-                .orderCode("ORD-2026-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                .orderCode(orderCode)
                 .buyer(buyer)
                 .product(product)
                 .isSelfPickup(selfPickup)
@@ -76,7 +86,29 @@ public class EscrowEngineService {
                 .deliveryAddress(deliveryAddress)
                 .build();
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        // Admin Notification Payload with Farmer Phone Number
+        String adminNotification = String.format(
+            "🔔 [AGRONEXUS ESCROW ALERT]\nOrder Code: %s\nTotal Escrow Locked: %s XAF\nBuyer: %s (%s)\nFarmer: %s (Phone: %s)\nProduce: %s (%s kg)\nMode: %s",
+            orderCode,
+            totalEscrow.toPlainString(),
+            buyer.getFullName(),
+            buyer.getPhoneNumber(),
+            farmer.getFullName(),
+            farmer.getPhoneNumber() != null ? farmer.getPhoneNumber() : "Not Provided",
+            product.getTitle(),
+            quantity,
+            selfPickup ? "DIRECT SELF-PICKUP" : "FREIGHT DELIVERY"
+        );
+
+        return Map.of(
+            "order", savedOrder,
+            "orangeMoneyEscrowWallet", OFFICIAL_ORANGE_MONEY_ESCROW,
+            "mtnMomoEscrowWallet", OFFICIAL_MTN_MOMO_ESCROW,
+            "farmerPhoneNumber", farmer.getPhoneNumber() != null ? farmer.getPhoneNumber() : "N/A",
+            "adminNotificationText", adminNotification
+        );
     }
 
     /**
