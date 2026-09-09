@@ -3,6 +3,7 @@ package com.agronexus.api.controller;
 import com.agronexus.api.entity.Role;
 import com.agronexus.api.entity.User;
 import com.agronexus.api.repository.UserRepository;
+import com.agronexus.api.security.JwtService;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
@@ -35,12 +36,14 @@ public class AuthController {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     // PostGIS GeometryFactory configured for WGS84 coordinate system (SRID 4326)
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
-    public AuthController(UserRepository userRepository) {
+    public AuthController(UserRepository userRepository, JwtService jwtService) {
         this.userRepository = userRepository;
+        this.jwtService = jwtService;
         // BCrypt password hashing with strength 12 (2^12 = 4096 hashing rounds)
         this.passwordEncoder = new BCryptPasswordEncoder(12);
     }
