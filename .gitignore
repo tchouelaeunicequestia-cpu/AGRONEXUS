@@ -12,7 +12,27 @@ bin-release/
 *.air
 *.ipa
 *.apk
+# Maven / Spring Boot Backend
+target/
+*.jar
+*.war
+.mvn/wrapper/maven-wrapper.jar
 
+# Flutter / Dart Frontend
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# Common IDEs and OS Files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
 # Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.
