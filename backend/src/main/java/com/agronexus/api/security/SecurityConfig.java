@@ -19,18 +19,8 @@ import java.util.List;
  * ==============================================================================
  * AgroNexus Spring Security Configuration
  *
- * WHY: Defines the HTTP security rules, CORS policy, stateless JWT session
- *      management, and registers JwtAuthFilter into the Spring Security chain.
- *
- * HOW:
- *   1. CSRF is DISABLED — stateless REST APIs use JWT instead of CSRF cookies.
- *   2. Sessions are STATELESS — Spring creates no HttpSession on the server,
- *      all auth state lives inside the JWT token on the client.
- *   3. PUBLIC ROUTES: /api/v1/auth/register and /api/v1/auth/login are open.
- *   4. ALL OTHER ROUTES require a valid JWT Bearer token in Authorization header.
- *   5. @EnableMethodSecurity activates @PreAuthorize("hasRole('FARMER')") annotations
- *      on controller methods for fine-grained RBAC access control.
- *   6. CORS is configured to allow cross-origin requests from the Flutter Web client.
+ * WHY: Defines HTTP security rules, CORS policy, stateless JWT session
+ *      management, Swagger UI bypasses, and registers JwtAuthFilter.
  * ==============================================================================
  */
 @Configuration
@@ -47,10 +37,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // 1. Disable CSRF — not needed for stateless JWT REST APIs
+                // 1. Disable CSRF — not needed for stateless REST APIs
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // 2. Apply CORS configuration for Flutter Web client cross-origin requests
+                // 2. Apply CORS configuration for cross-origin requests
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 // 3. Enforce STATELESS session management — no server-side HTTP sessions
@@ -61,11 +51,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // PUBLIC: Registration and login do not require a token
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        // PUBLIC: Allow Swagger UI and OpenAPI documentation resources
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         // ALL OTHER endpoints: require a valid JWT Bearer token
                         .anyRequest().authenticated())
 
                 // 5. Register JwtAuthFilter BEFORE Spring's default auth filter
-                //    This ensures JWT is validated before any route is processed
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .build();
@@ -73,14 +64,11 @@ public class SecurityConfig {
 
     /**
      * CORS Configuration
-     * WHY: Allows the Flutter Web frontend and mobile clients to call the REST API
-     *      from different origins (e.g., vercel.app, localhost:3000, mobile app).
-     * HOW: Permits all origins for development. Restrict to specific domain in production.
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*")); // Restrict to your domain in production
+        config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         config.setAllowCredentials(true);
