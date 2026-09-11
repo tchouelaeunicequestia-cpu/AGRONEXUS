@@ -115,6 +115,16 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- ==============================================================================
+     SPRINGDOC OPENAPI / SWAGGER UI
+     WHY: Auto-generates API documentation and interactive testing interface.
+     HOW: Supports Spring Boot 3.x & Java 21; serves UI at /swagger-ui.html.
+     ============================================================================== -->
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.6.0</version>
+</dependency>
     </dependencies>
 
     <build>
