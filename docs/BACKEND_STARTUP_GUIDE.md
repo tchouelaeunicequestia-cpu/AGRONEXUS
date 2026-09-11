@@ -1,4 +1,4 @@
-﻿# AgroNexus Backend — Startup Guide & Testing Log
+# AgroNexus Backend — Startup Guide & Testing Log
 
 **Author**: Eunice Françoise Tchouela Quetsia (Registration No: ICTU20248912)
 **Date**: September 2026
@@ -193,7 +193,7 @@ properties:
 
 ---
 
-### Error 3 — PSQLException: The connection attempt failed (Supabase Paused)
+### Error 3 — PSQLException: UnknownHostException (IPv6 Routing Issue)
 
 **When**: Third attempt (after fixing Errors 1 & 2).
 
@@ -205,31 +205,19 @@ Caused by: java.net.UnknownHostException: db.dchoxjkluggsdkwgtmdm.supabase.co
 
 **Diagnosis:**
 ```powershell
-# DNS resolves correctly ✅
+# DNS resolves correctly to an IPv6 address ✅
 Resolve-DnsName db.dchoxjkluggsdkwgtmdm.supabase.co
 # → Returns IPv6: 2a05:d018:175d:b600:a27c:8f30:521f:96b3
-
-# Port 5432 NOT reachable ❌
-Test-NetConnection -ComputerName "db.dchoxjkluggsdkwgtmdm.supabase.co" -Port 5432
-# → TcpTestSucceeded : False
 ```
 
 **Root cause:**
-The Supabase **free-tier project is paused**. Supabase automatically pauses free-tier projects after **7 days of no activity** to save server resources. DNS resolves because the domain still exists, but the actual PostgreSQL server is stopped.
+Supabase recently changed their free-tier databases to use **IPv6 by default** for direct connections. If your local Internet Service Provider (ISP) does not support IPv6 routing, the Java application cannot reach the server, resulting in an `UnknownHostException` (or `The connection attempt failed`).
 
-> **This is NOT a code bug.** All Java code compiled 100% correctly. This is an external service issue.
-
----
-
-### ✅ How to Fix Error 3 (Un-pause Supabase)
-
-1. Go to **https://supabase.com/dashboard** and log in
-2. Find project ID: **dchoxjkluggsdkwgtmdm**
-3. Click **"Restore project"** if you see a "Project paused" banner
-4. Wait **2–3 minutes** for the database to fully wake up
-5. Re-run: `mvn spring-boot:run`
-
-> **Tip**: Log into the Supabase dashboard at least once per week to prevent auto-pausing.
+**Fix applied — Switched to Supabase Session Pooler (IPv4 compatible):**
+We updated the connection string to use the Supabase connection pooler, which provides an IPv4 address.
+1. In Supabase Dashboard, went to **Database Settings** > **Connection string**.
+2. Selected **Session pooler** instead of Direct connection.
+3. Updated the `application.yml` URL and username accordingly.
 
 ---
 
@@ -240,8 +228,8 @@ The Supabase **free-tier project is paused**. Supabase automatically pauses free
 | 1 | `mvn compile` | ✅ BUILD SUCCESS — all 14 Java files compiled cleanly |
 | 2 | `mvn spring-boot:run` | ❌ Error 1: PostgisDialect class not found |
 | 3 | Fix → `mvn spring-boot:run` | ❌ Error 2: Dialect unresolvable before JDBC is open |
-| 4 | Fix → `mvn spring-boot:run` | ❌ Error 3: Supabase project paused (external) |
-| 5 | *Pending* | ⏳ Un-pause Supabase → re-run |
+| 4 | Fix → `mvn spring-boot:run` | ❌ Error 3: IPv6 routing failure (UnknownHostException) |
+| 5 | Fix → `mvn spring-boot:run` | ✅ **SERVER STARTED SUCCESSFULLY (Port 8080)** |
 
 ---
 
@@ -258,8 +246,8 @@ spring:
     name: agronexus-backend
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://db.dchoxjkluggsdkwgtmdm.supabase.co:5432/postgres?sslmode=require}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres.dchoxjkluggsdkwgtmdm}
     password: ${SPRING_DATASOURCE_PASSWORD:fzUektKdsTLUbxX8}
     driver-class-name: org.postgresql.Driver
 
@@ -284,12 +272,10 @@ agronexus:
 
 | # | Task | Description |
 |---|------|-------------|
-| 1 | Un-pause Supabase | Restore the project from the dashboard |
-| 2 | Confirm server starts | Look for "Started AgroNexusApplication" |
-| 3 | Test `/auth/register` | Create a FARMER and a BUYER account |
-| 4 | Test `/auth/login` | Receive a real signed JWT token |
-| 5 | Build `ProductController` | Radial geospatial produce catalog endpoint |
-| 6 | Build `EscrowController` | MTN/Orange Money disbursement endpoint |
-| 7 | Build `TelemetryController` | IoT ESP32 data ingestion endpoint |
-| 8 | Full API test with Postman | End-to-end flow: register → list produce → order |
-| 9 | Deploy to Render.com | Push Docker image to production |
+| 1 | Test `/auth/register` | Create a FARMER and a BUYER account |
+| 2 | Test `/auth/login` | Receive a real signed JWT token |
+| 3 | Build `ProductController` | Radial geospatial produce catalog endpoint |
+| 4 | Build `EscrowController` | MTN/Orange Money disbursement endpoint |
+| 5 | Build `TelemetryController` | IoT ESP32 data ingestion endpoint |
+| 6 | Full API test with Postman | End-to-end flow: register → list produce → order |
+| 7 | Deploy to Render.com | Push Docker image to production |

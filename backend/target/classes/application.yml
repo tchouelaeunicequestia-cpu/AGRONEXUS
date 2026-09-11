@@ -18,8 +18,8 @@ spring:
   # HOW: Uses JDBC URL with SSL enabled for secure cloud transactions.
   # ==============================================================================
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://db.dchoxjkluggsdkwgtmdm.supabase.co:5432/postgres?sslmode=require}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres.dchoxjkluggsdkwgtmdm}
     password: ${SPRING_DATASOURCE_PASSWORD:fzUektKdsTLUbxX8}
     driver-class-name: org.postgresql.Driver
 
