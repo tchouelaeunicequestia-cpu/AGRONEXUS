@@ -124,8 +124,15 @@ public class AuthController {
 
         User user = userOpt.get();
 
-return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(Map.of(
-                "error", "JWT issuance is not implemented yet."
+        // Generate signed JWT token
+        String token = jwtService.generateToken(user);
+
+        return ResponseEntity.ok(Map.of(
+                "token", token,
+                "userId", user.getId(),
+                "role", user.getRole().name(),
+                "email", user.getEmail(),
+                "fullName", user.getFullName()
         ));
     }
 }

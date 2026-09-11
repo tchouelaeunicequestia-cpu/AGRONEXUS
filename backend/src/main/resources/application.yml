@@ -18,23 +18,24 @@ spring:
   # HOW: Uses JDBC URL with SSL enabled for secure cloud transactions.
   # ==============================================================================
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://db.dchoxjkluggsdkwgtmdm.supabase.co:5432/postgres?sslmode=require}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres.dchoxjkluggsdkwgtmdm}
     password: ${SPRING_DATASOURCE_PASSWORD:fzUektKdsTLUbxX8}
     driver-class-name: org.postgresql.Driver
 
   # ==============================================================================
   # JPA & HIBERNATE POSTGIS SPATIAL DIALECT
   # WHY: Instructs Hibernate to understand PostGIS spatial geometries (Point, Polygon).
-  # HOW: Maps PostGIS ST_DWithin and ST_MakePoint spatial functions to Java.
+  # HOW: In Hibernate 6, postgresql dialect is set explicitly so hibernate-spatial
+  #      can resolve spatial type contributors before JDBC metadata is available.
   # ==============================================================================
   jpa:
-    database-platform: org.hibernate.spatial.dialect.postgis.PostgisDialect
     hibernate:
       ddl-auto: update
     show-sql: false
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
 # ==============================================================================
