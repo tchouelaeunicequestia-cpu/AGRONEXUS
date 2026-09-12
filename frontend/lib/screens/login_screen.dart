@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_provider.dart';
-import '../services/api_service.dart'; // Import ApiService
-import 'register_screen.dart';
+import 'register_screen.dart'; // We'll create this next
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,15 +27,12 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        // Call live Spring Boot backend login endpoint
-        final jwtToken = await ApiService.login(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
+        // Simulate or execute login through AuthProvider
+        // In the next step, we will hook this to api_service.dart
+        await Provider.of<AuthProvider>(context, listen: false)
+            .login('dummy_jwt_token_for_now');
 
-        // Save token to AuthProvider & Secure Storage
         if (mounted) {
-          await Provider.of<AuthProvider>(context, listen: false).login(jwtToken);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Login Successful!')),
           );
@@ -131,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       );
                     },
-                    child: const Text("Don't have an account? Register here"),
+                    child: const Text('Don\'t have an account? Register here'),
                   ),
                 ],
               ),
