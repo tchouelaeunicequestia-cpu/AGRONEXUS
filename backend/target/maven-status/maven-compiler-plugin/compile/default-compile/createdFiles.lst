@@ -6,20 +6,16 @@ com\agronexus\api\controller\ProductController.class
 com\agronexus\api\entity\User.class
 com\agronexus\api\entity\User$UserBuilder.class
 com\agronexus\api\AgroNexusApplication.class
-<<<<<<< Updated upstream
 com\agronexus\api\repository\TelemetryLogRepository.class
-=======
->>>>>>> Stashed changes
+
 com\agronexus\api\repository\OrderRepository.class
 com\agronexus\api\controller\AiAssistantController.class
 com\agronexus\api\security\JwtAuthFilter.class
 com\agronexus\api\entity\TelemetryLog$TelemetryLogBuilder.class
 com\agronexus\api\entity\KnowledgeEmbedding.class
 com\agronexus\api\controller\AuthController.class
-<<<<<<< Updated upstream
 com\agronexus\api\controller\TelemetryController.class
-=======
->>>>>>> Stashed changes
+
 com\agronexus\api\security\SecurityConfig.class
 com\agronexus\api\entity\Role.class
 com\agronexus\api\entity\TelemetryLog.class

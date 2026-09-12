@@ -1,13 +1,9 @@
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\AgroNexusApplication.java
-<<<<<<< Updated upstream
-C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\controller\AiAssistantController.java
-C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\controller\AuthController.java
-=======
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\config\OpenApiConfig.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\controller\AiAssistantController.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\controller\AuthController.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\controller\EscrowController.java
->>>>>>> Stashed changes
+
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\controller\ProductController.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\controller\TelemetryController.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\entity\EscrowStatus.java

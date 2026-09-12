@@ -1,49 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_provider.dart';
+import '../services/api_service.dart'; // Import ApiService
+import 'register_screen.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
-  // Default selected role matching backend entities
-  String _selectedRole = 'FARMER';
-  final List<String> _roles = ['FARMER', 'BUYER', 'TRANSPORTER', 'AGRONOMIST'];
-
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _submitRegister() async {
+  Future<void> _submitLogin() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        // TODO: Hook up with ApiService for live backend registration
-        await Future.delayed(const Duration(seconds: 1)); // simulated network call
+        // Call live Spring Boot backend login endpoint
+        final jwtToken = await ApiService.login(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
 
+        // Save token to AuthProvider & Secure Storage
         if (mounted) {
+          await Provider.of<AuthProvider>(context, listen: false).login(jwtToken);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration Successful! Please login.')),
+            const SnackBar(content: Text('Login Successful!')),
           );
-          Navigator.pop(context); // Return to Login Screen
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Registration Failed: $e')),
+            SnackBar(content: Text('Login Failed: $e')),
           );
         }
       } finally {
@@ -56,7 +57,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AgroNexus - Register'),
+        title: const Text('AgroNexus - Login'),
         backgroundColor: Colors.green[700],
       ),
       body: Padding(
@@ -68,28 +69,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.person_add_alt_1, size: 80, color: Colors.green),
+                  const Icon(Icons.agriculture, size: 80, color: Colors.green),
                   const SizedBox(height: 16),
                   const Text(
-                    'Create an AgroNexus Account',
+                    'Welcome Back to AgroNexus',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 32),
-
-                  // Full Name
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Full Name',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter your name' : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Email
+                  
+                  // Email Input Field
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
@@ -102,7 +90,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Password
+                  // Password Input Field
                   TextFormField(
                     controller: _passwordController,
                     obscureText: true,
@@ -112,33 +100,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       prefixIcon: Icon(Icons.lock),
                     ),
                     validator: (value) =>
-                        value!.length < 6 ? 'Password must be at least 6 characters' : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Role Dropdown
-                  DropdownButtonFormField<String>(
-                    value: _selectedRole,
-                    decoration: const InputDecoration(
-                      labelText: 'Select Role',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.group),
-                    ),
-                    items: _roles.map((String role) {
-                      return DropdownMenuItem<String>(
-                        value: role,
-                        child: Text(role),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedRole = newValue!;
-                      });
-                    },
+                        value!.length < 6 ? 'Password must be at least 6 chars' : null,
                   ),
                   const SizedBox(height: 24),
 
-                  // Register Button
+                  // Login Button
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -147,11 +113,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         backgroundColor: Colors.green[700],
                         foregroundColor: Colors.white,
                       ),
-                      onPressed: _isLoading ? null : _submitRegister,
+                      onPressed: _isLoading ? null : _submitLogin,
                       child: _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Register', style: TextStyle(fontSize: 16)),
+                          : const Text('Login', style: TextStyle(fontSize: 16)),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Navigate to Register
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RegisterScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text("Don't have an account? Register here"),
                   ),
                 ],
               ),
