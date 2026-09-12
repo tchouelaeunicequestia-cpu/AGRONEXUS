@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Import Provider
-import 'screens/test_screen.dart';
+import 'screens/login_screen.dart';
 import 'services/auth_provider.dart'; // Import your new class
 
 void main() {
@@ -23,7 +23,7 @@ class AgroNexusApp extends StatelessWidget {
     return MaterialApp(
       title: 'AgroNexus',
       theme: ThemeData(primarySwatch: Colors.green),
-      home: TestScreen(), 
+      home: LoginScreen(), 
     );
   }
 }
