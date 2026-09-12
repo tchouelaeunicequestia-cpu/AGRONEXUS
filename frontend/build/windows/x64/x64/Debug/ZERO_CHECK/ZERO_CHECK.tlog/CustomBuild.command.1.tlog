@@ -1,0 +1,10 @@
+^C:\USERS\LENOVO P14S\MUSIC\AGRONEXUS\FRONTEND\BUILD\WINDOWS\X64\CMAKEFILES\F65BC7A800C17F4E599FB49C016785D7\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" "-SC:/Users/lenovo p14s/Music/AGRONEXUS/frontend/windows" "-BC:/Users/lenovo p14s/Music/AGRONEXUS/frontend/build/windows/x64" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "C:/Users/lenovo p14s/Music/AGRONEXUS/frontend/build/windows/x64/frontend.sln"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
