@@ -1,50 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../services/auth_provider.dart';
-import '../services/api_service.dart'; // Import ApiService
-import 'register_screen.dart';
-
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+import '../services/api_service.dart';
+import '../services/secure_storage_service.dart';
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  
+  String _selectedRole = 'FARMER';
+  final List<String> _roles = ['FARMER', 'BUYER', 'TRANSPORTER', 'AGRONOMIST'];
+
   bool _isLoading = false;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _submitLogin() async {
+  Future<void> _submitRegister() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        // Call live Spring Boot backend login endpoint
-        final jwtToken = await ApiService.login(
+        await ApiService.register(
+          name: _nameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
+          role: _selectedRole,
         );
 
-        // Save token to AuthProvider & Secure Storage
         if (mounted) {
-          await Provider.of<AuthProvider>(context, listen: false).login(jwtToken);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login Successful!')),
+            const SnackBar(content: Text('Registration Successful! Please login.')),
           );
+          Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Login Failed: $e')),
+            SnackBar(content: Text('Registration Failed: $e')),
           );
         }
       } finally {
@@ -57,8 +60,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AgroNexus - Login'),
-        backgroundColor: Colors.green[700],
+        title: const Text('AgroNexus - Register'),
+        backgroundColor: Colors.green,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -69,15 +72,26 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.agriculture, size: 80, color: Colors.green),
+                  const Icon(Icons.person_add_alt_1, size: 80, color: Colors.green),
                   const SizedBox(height: 16),
                   const Text(
-                    'Welcome Back to AgroNexus',
+                    'Create an AgroNexus Account',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 32),
-                  
-                  // Email Input Field
+
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Full Name',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.person),
+                    ),
+                    validator: (value) =>
+                        value!.isEmpty ? 'Please enter your name' : null,
+                  ),
+                  const SizedBox(height: 16),
+
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
@@ -90,7 +104,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Password Input Field
                   TextFormField(
                     controller: _passwordController,
                     obscureText: true,
@@ -100,38 +113,44 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: Icon(Icons.lock),
                     ),
                     validator: (value) =>
-                        value!.length < 6 ? 'Password must be at least 6 chars' : null,
+                        value!.length < 6 ? 'Password must be at least 6 characters' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField<String>(
+                    value: _selectedRole,
+                    decoration: const InputDecoration(
+                      labelText: 'Select Role',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.group),
+                    ),
+                    items: _roles.map((String role) {
+                      return DropdownMenuItem<String>(
+                        value: role,
+                        child: Text(role),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedRole = newValue!;
+                      });
+                    },
                   ),
                   const SizedBox(height: 24),
 
-                  // Login Button
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green[700],
+                        backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
                       ),
-                      onPressed: _isLoading ? null : _submitLogin,
+                      onPressed: _isLoading ? null : _submitRegister,
                       child: _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Login', style: TextStyle(fontSize: 16)),
+                          : const Text('Register', style: TextStyle(fontSize: 16)),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Navigate to Register
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RegisterScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text("Don't have an account? Register here"),
                   ),
                 ],
               ),

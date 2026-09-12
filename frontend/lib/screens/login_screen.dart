@@ -28,13 +28,11 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        // Call live Spring Boot backend login endpoint
         final jwtToken = await ApiService.login(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
-        // Save token to AuthProvider & Secure Storage
         if (mounted) {
           await Provider.of<AuthProvider>(context, listen: false).login(jwtToken);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -58,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('AgroNexus - Login'),
-        backgroundColor: Colors.green[700],
+        backgroundColor: Colors.green,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -77,7 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 32),
                   
-                  // Email Input Field
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
@@ -90,7 +87,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Password Input Field
                   TextFormField(
                     controller: _passwordController,
                     obscureText: true,
@@ -104,13 +100,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Login Button
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green[700],
+                        backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
                       ),
                       onPressed: _isLoading ? null : _submitLogin,
@@ -121,7 +116,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Navigate to Register
                   TextButton(
                     onPressed: () {
                       Navigator.push(

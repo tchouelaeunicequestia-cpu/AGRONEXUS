@@ -141,6 +141,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
+    <ProjectReference Include="C:\Users\lenovo p14s\Music\AGRONEXUS\frontend\build\windows\x64\plugins\flutter_secure_storage_windows\flutter_secure_storage_windows_plugin.vcxproj">
+      <Project>{E7F32029-0083-305F-9EF6-CF0D6641B37A}</Project>
+      <Name>flutter_secure_storage_windows_plugin</Name>
+    </ProjectReference>
     <ProjectReference Include="C:\Users\lenovo p14s\Music\AGRONEXUS\frontend\build\windows\x64\flutter\flutter_wrapper_app.vcxproj">
       <Project>{7A27291F-1E43-35B0-ABCD-2CBE4045BD39}</Project>
       <Name>flutter_wrapper_app</Name>
@@ -152,6 +156,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ProjectReference Include="C:\Users\lenovo p14s\Music\AGRONEXUS\frontend\build\windows\x64\runner\frontend.vcxproj">
       <Project>{A9E3A68E-B176-3083-9B13-52B0E14A085C}</Project>
       <Name>frontend</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\lenovo p14s\Music\AGRONEXUS\frontend\build\windows\x64\plugins\jni\shared\jni.vcxproj">
+      <Project>{942EF52B-F4CD-3729-BF0E-D96B7BDF9501}</Project>
+      <Name>jni</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

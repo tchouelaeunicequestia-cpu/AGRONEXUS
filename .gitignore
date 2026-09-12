@@ -1,38 +1,22 @@
-# Build and Release Folders
-bin-debug/
-bin-release/
-[Oo]bj/
-[Bb]in/
+# --- Flutter / Frontend ---
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/pubspec.lock
+frontend/build/
+frontend/windows/flutter/ephemeral/
+frontend/android/.gradle/
+frontend/android/app/build/
 
-# Other files and folders
-.settings/
+# --- Spring Boot / Backend ---
+backend/target/
+backend/.mvn/
+backend/out/
+backend/.gradle/
 
-# Executables
-*.swf
-*.air
-*.ipa
-*.apk
-# Maven / Spring Boot Backend
-target/
-*.jar
-*.war
-.mvn/wrapper/maven-wrapper.jar
-
-# Flutter / Dart Frontend
-.dart_tool/
-build/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub-cache/
-.pub/
-
-# Common IDEs and OS Files
+# --- IDE and OS files ---
 .idea/
 .vscode/
 *.iml
 .DS_Store
 Thumbs.db
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
