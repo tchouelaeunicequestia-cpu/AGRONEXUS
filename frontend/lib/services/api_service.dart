@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'dart:io' show Platform;
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
-
 import 'secure_storage_service.dart';
 
 class ApiService {
@@ -64,12 +62,10 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = jsonDecode(response.body);
-
-      // Safe String Conversion & Null Extraction Guard
-      final String accessToken = (data['accessToken'] ?? data['token'] ?? '')
-          .toString();
+      final String accessToken = (data['accessToken'] ?? data['token'] ?? '').toString();
       final String refreshToken = (data['refreshToken'] ?? '').toString();
       final String role = (data['role'] ?? 'BUYER').toString();
+      final String? userId = data['userId']?.toString();
 
       if (accessToken.isEmpty) {
         throw Exception('Server returned an empty or missing access token.');
@@ -79,6 +75,7 @@ class ApiService {
         accessToken: accessToken,
         refreshToken: refreshToken,
         role: role,
+        userId: userId,
       );
       return data;
     } else {
@@ -91,29 +88,24 @@ class ApiService {
   static Future<bool> refreshAccessToken() async {
     final refreshToken = await _storage.getRefreshToken();
     if (refreshToken == null || refreshToken.isEmpty) return false;
-
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/refresh'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'refreshToken': refreshToken}),
       );
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final currentRole = await _storage.getUserRole() ?? 'BUYER';
-
-        final String newAccessToken =
-            (data['accessToken'] ?? data['token'] ?? '').toString();
-        final String newRefreshToken = (data['refreshToken'] ?? refreshToken)
-            .toString();
-
+        final currentUserId = await _storage.getUserId();
+        final String newAccessToken = (data['accessToken'] ?? data['token'] ?? '').toString();
+        final String newRefreshToken = (data['refreshToken'] ?? refreshToken).toString();
         if (newAccessToken.isEmpty) return false;
-
         await _storage.saveSession(
           accessToken: newAccessToken,
           refreshToken: newRefreshToken,
           role: currentRole,
+          userId: currentUserId,
         );
         return true;
       } else {
@@ -138,10 +130,7 @@ class ApiService {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ${token ?? ""}',
     };
-
     http.Response response = await _sendRequest(method, uri, headers, body);
-
-    // If Access Token is expired (401), trigger silent refresh & retry once
     if (response.statusCode == 401) {
       bool refreshed = await refreshAccessToken();
       if (refreshed) {
@@ -150,7 +139,6 @@ class ApiService {
         response = await _sendRequest(method, uri, headers, body);
       }
     }
-
     return response;
   }
 

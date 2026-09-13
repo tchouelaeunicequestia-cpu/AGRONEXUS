@@ -6,20 +6,28 @@ class SecureStorageService {
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
   static const String _userRoleKey = 'user_role';
+  static const String _userIdKey = 'user_id';
 
   Future<void> saveSession({
     required String accessToken,
     required String refreshToken,
     required String role,
+    String? userId,
   }) async {
     await _storage.write(key: _accessTokenKey, value: accessToken);
     await _storage.write(key: _refreshTokenKey, value: refreshToken);
     await _storage.write(key: _userRoleKey, value: role);
+    if (userId != null) {
+      await _storage.write(key: _userIdKey, value: userId);
+    }
   }
 
-  Future<String?> getAccessToken() async => await _storage.read(key: _accessTokenKey);
-  Future<String?> getRefreshToken() async => await _storage.read(key: _refreshTokenKey);
+  Future<String?> getAccessToken() async =>
+      await _storage.read(key: _accessTokenKey);
+  Future<String?> getRefreshToken() async =>
+      await _storage.read(key: _refreshTokenKey);
   Future<String?> getUserRole() async => await _storage.read(key: _userRoleKey);
+  Future<String?> getUserId() async => await _storage.read(key: _userIdKey);
 
   Future<void> clearSession() async {
     await _storage.deleteAll();
