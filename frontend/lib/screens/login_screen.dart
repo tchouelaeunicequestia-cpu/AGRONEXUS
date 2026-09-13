@@ -29,37 +29,31 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final jwtToken = await ApiService.login(
+      final authData = await ApiService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
       if (!mounted) return;
 
-      if (jwtToken != null && jwtToken.isNotEmpty) {
-        // Show success notification before navigating
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 10),
-                Text('Login Successful! Redirecting...'),
-              ],
-            ),
-            backgroundColor: Colors.green.shade700,
-            duration: const Duration(seconds: 2),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Login Successful! Redirecting...'),
+            ],
           ),
-        );
+          backgroundColor: Colors.green.shade700,
+          duration: const Duration(seconds: 2),
+        ),
+      );
 
-        await Provider.of<AuthProvider>(context, listen: false).login(jwtToken);
-      } else {
-        throw Exception('Invalid credentials or empty token returned from server.');
-      }
+      await Provider.of<AuthProvider>(context, listen: false).login(authData);
     } catch (e) {
       if (!mounted) return;
 
-      // Display a prominent error dialog so it cannot be missed
       showDialog(
         context: context,
         builder: (dialogContext) => AlertDialog(
@@ -98,10 +92,11 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth > 800;
+
           return Row(
             children: [
-              // Left Panel with Farm Image (Hidden on Mobile)
-              if (constraints.maxWidth > 800)
+              if (isDesktop)
                 Expanded(
                   flex: 5,
                   child: Container(
@@ -110,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         image: const NetworkImage('https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=1920&auto=format&fit=crop'),
                         fit: BoxFit.cover,
                         colorFilter: ColorFilter.mode(
-                          Colors.black.withOpacity(0.55),
+                          Colors.black.withValues(alpha: 0.55),
                           BlendMode.darken,
                         ),
                       ),
@@ -134,13 +129,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
-              // Right Panel (Form)
               Expanded(
                 flex: 7,
                 child: Center(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 48.0, vertical: 32.0),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isDesktop ? 48.0 : 24.0,
+                      vertical: 32.0,
+                    ),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 450),
                       child: Form(
@@ -148,8 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Mobile Logo Fallback
-                            if (constraints.maxWidth <= 800) ...[
+                            if (!isDesktop) ...[
                               Icon(Icons.eco, size: 48, color: Colors.green.shade800),
                               const SizedBox(height: 24),
                             ],
@@ -157,7 +152,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 8),
                             Text('Enter your credentials to access AgroNexus.', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
                             const SizedBox(height: 48),
-
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
@@ -180,7 +174,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               validator: (v) => v!.isEmpty ? 'Required' : null,
                             ),
                             const SizedBox(height: 40),
-
                             SizedBox(
                               width: double.infinity,
                               height: 52,
@@ -197,7 +190,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 24),
-
                             Center(
                               child: TextButton(
                                 onPressed: () {

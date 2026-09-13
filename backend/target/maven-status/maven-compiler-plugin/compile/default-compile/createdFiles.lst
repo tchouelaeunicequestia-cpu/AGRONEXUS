@@ -11,8 +11,11 @@ com\agronexus\api\config\OpenApiConfig.class
 com\agronexus\api\repository\OrderRepository.class
 com\agronexus\api\controller\AiAssistantController.class
 com\agronexus\api\security\JwtAuthFilter.class
+com\agronexus\api\entity\RefreshToken.class
 com\agronexus\api\entity\TelemetryLog$TelemetryLogBuilder.class
+com\agronexus\api\entity\RefreshToken$RefreshTokenBuilder.class
 com\agronexus\api\entity\KnowledgeEmbedding.class
+com\agronexus\api\repository\RefreshTokenRepository.class
 com\agronexus\api\controller\AuthController.class
 com\agronexus\api\controller\TelemetryController.class
 com\agronexus\api\security\SecurityConfig.class
