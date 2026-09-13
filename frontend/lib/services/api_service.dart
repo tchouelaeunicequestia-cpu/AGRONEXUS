@@ -1,8 +1,23 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8080/api/v1/auth';
+  // Dynamically resolve backend host based on execution platform
+  static String get baseUrl {
+    if (kIsWeb) {
+      return 'http://localhost:8080/api/v1';
+    } else if (Platform.isAndroid) {
+      // Laptop's active IPv4 Address on 'HOUSE DESIGN' Wi-Fi network
+      return 'http://192.168.1.133:8080/api/v1';
+    } else {
+      // Windows Desktop
+      return 'http://localhost:8080/api/v1';
+    }
+  }
+
+  // --- EPIC 1: AUTHENTICATION ---
 
   static Future<bool> register({
     required String name,
@@ -13,7 +28,7 @@ class ApiService {
     double? longitude,
   }) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/register'),
+      Uri.parse('$baseUrl/auth/register'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'fullName': name,
@@ -28,7 +43,8 @@ class ApiService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return true;
     } else {
-      throw Exception(response.body);
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? errorData['message'] ?? response.body);
     }
   }
 
@@ -37,16 +53,20 @@ class ApiService {
     required String password,
   }) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/login'),
+      Uri.parse('$baseUrl/auth/login'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+      }),
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return data['token'];
     } else {
-      throw Exception('Invalid email or password');
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Invalid email or password');
     }
   }
 }

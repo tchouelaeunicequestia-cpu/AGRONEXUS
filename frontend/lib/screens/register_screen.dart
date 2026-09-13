@@ -75,68 +75,79 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   Icon(Icons.gps_fixed, color: Colors.green.shade700),
                   const SizedBox(width: 10),
-                  const Text('Geospatial PostGIS Lock', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Expanded(
+                    child: Text(
+                      'Geospatial PostGIS Lock',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               content: SizedBox(
                 width: 380,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Acquiring coordinates for spatial indexing (SRID: 4326).',
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.green.shade200),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Acquiring coordinates for spatial indexing (SRID: 4326).',
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Latitude:', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Text(tempLat != null ? tempLat!.toStringAsFixed(6) : 'Not detected'),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Longitude:', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Text(tempLon != null ? tempLon!.toStringAsFixed(6) : 'Not detected'),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          const Divider(),
-                          const SizedBox(height: 4),
-                          Text('Status: $tempLocName', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (isFetching)
-                      const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()))
-                    else
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade700,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 42),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.shade200),
                         ),
-                        onPressed: fetchGPS,
-                        icon: const Icon(Icons.my_location, size: 18),
-                        label: const Text('Get GPS Position'),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Latitude:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                Text(tempLat != null ? tempLat!.toStringAsFixed(6) : 'Not detected'),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Longitude:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                Text(tempLon != null ? tempLon!.toStringAsFixed(6) : 'Not detected'),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            const Divider(),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Status: $tempLocName',
+                              style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                            ),
+                          ],
+                        ),
                       ),
-                  ],
+                      const SizedBox(height: 16),
+                      if (isFetching)
+                        const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()))
+                      else
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade700,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 42),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: fetchGPS,
+                          icon: const Icon(Icons.my_location, size: 18),
+                          label: const Text('Get GPS Position'),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -214,79 +225,87 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   Icon(Icons.face_retouching_natural, color: Colors.green.shade700),
                   const SizedBox(width: 10),
-                  const Text('Live Face Scan Verification', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Expanded(
+                    child: Text(
+                      'Live Face Scan Verification',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               content: SizedBox(
                 width: 360,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      statusMessage,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: scanComplete ? Colors.green.shade800 : Colors.grey.shade700,
-                        fontWeight: scanComplete ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      height: 180,
-                      width: 180,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey.shade900,
-                        border: Border.all(
-                          color: scanComplete
-                              ? Colors.greenAccent
-                              : isScanning
-                                  ? Colors.amber
-                                  : Colors.green.shade700,
-                          width: 3,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        statusMessage,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: scanComplete ? Colors.green.shade800 : Colors.grey.shade700,
+                          fontWeight: scanComplete ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          if (isScanning)
-                            const CircularProgressIndicator(color: Colors.amber, strokeWidth: 3)
-                          else if (scanComplete)
-                            const Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 72)
-                          else
-                            Icon(Icons.face, color: Colors.green.shade300, size: 72),
-                          if (isScanning)
-                            const Positioned(
-                              bottom: 16,
-                              child: Text('Analyzing geometry...', style: TextStyle(color: Colors.white70, fontSize: 10)),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    if (!scanComplete && !isScanning)
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade700,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      const SizedBox(height: 20),
+                      Container(
+                        height: 160,
+                        width: 160,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey.shade900,
+                          border: Border.all(
+                            color: scanComplete
+                                ? Colors.greenAccent
+                                : isScanning
+                                    ? Colors.amber
+                                    : Colors.green.shade700,
+                            width: 3,
+                          ),
                         ),
-                        onPressed: performBiometricScan,
-                        icon: const Icon(Icons.camera_alt),
-                        label: const Text('Start Live Scan'),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            if (isScanning)
+                              const CircularProgressIndicator(color: Colors.amber, strokeWidth: 3)
+                            else if (scanComplete)
+                              const Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 64)
+                            else
+                              Icon(Icons.face, color: Colors.green.shade300, size: 64),
+                            if (isScanning)
+                              const Positioned(
+                                bottom: 12,
+                                child: Text('Analyzing geometry...', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                              ),
+                          ],
+                        ),
                       ),
-                    if (scanComplete)
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.verified, color: Colors.green),
-                          SizedBox(width: 8),
-                          Text('Identity Verified', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                  ],
+                      const SizedBox(height: 20),
+                      if (!scanComplete && !isScanning)
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade700,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: performBiometricScan,
+                          icon: const Icon(Icons.camera_alt),
+                          label: const Text('Start Live Scan'),
+                        ),
+                      if (scanComplete)
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.verified, color: Colors.green),
+                            SizedBox(width: 8),
+                            Text('Identity Verified', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -359,9 +378,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth > 800;
+
           return Row(
             children: [
-              if (constraints.maxWidth > 800)
+              if (isDesktop)
                 Expanded(
                   flex: 5,
                   child: Container(
@@ -400,7 +421,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 flex: 7,
                 child: Center(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 48.0, vertical: 32.0),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isDesktop ? 48.0 : 24.0,
+                      vertical: 32.0,
+                    ),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 550),
                       child: Form(
@@ -417,11 +441,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
-                                childAspectRatio: 2.5,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
+                                childAspectRatio: isDesktop ? 2.3 : 1.9,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
                               ),
                               itemCount: _roles.length,
                               itemBuilder: (context, index) {
@@ -436,18 +460,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       border: Border.all(color: isSelected ? Colors.green.shade700 : Colors.grey.shade300, width: 2),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    padding: const EdgeInsets.all(12),
+                                    padding: const EdgeInsets.all(8),
                                     child: Row(
                                       children: [
-                                        Icon(role['icon'], color: isSelected ? Colors.green.shade700 : Colors.grey.shade500),
-                                        const SizedBox(width: 12),
+                                        Icon(role['icon'], color: isSelected ? Colors.green.shade700 : Colors.grey.shade500, size: 20),
+                                        const SizedBox(width: 8),
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
-                                              Text(role['label'], style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.green.shade900 : Colors.grey.shade800)),
-                                              Text(role['desc'], style: TextStyle(fontSize: 10, color: Colors.grey.shade600), overflow: TextOverflow.ellipsis),
+                                              Text(
+                                                role['label'],
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13,
+                                                  color: isSelected ? Colors.green.shade900 : Colors.grey.shade800,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                role['desc'],
+                                                style: TextStyle(fontSize: 9, color: Colors.grey.shade600),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -486,17 +524,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     icon: Icon(
                                       _isLocationCaptured ? Icons.check_circle : Icons.gps_fixed,
                                       color: _isLocationCaptured ? Colors.green.shade700 : Colors.blueGrey,
+                                      size: 18,
                                     ),
                                     label: Text(
                                       _isLocationCaptured ? 'GPS Verified' : 'Verify Location',
                                       style: TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 11,
                                         fontWeight: _isLocationCaptured ? FontWeight.bold : FontWeight.normal,
                                         color: _isLocationCaptured ? Colors.green.shade800 : null,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                                       side: BorderSide(
                                         color: _isLocationCaptured ? Colors.green.shade700 : Colors.grey.shade300,
                                         width: _isLocationCaptured ? 2 : 1,
@@ -505,24 +545,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: OutlinedButton.icon(
                                     onPressed: _openFaceScanModal,
                                     icon: Icon(
                                       _isFaceScanned ? Icons.check_circle : Icons.face,
                                       color: _isFaceScanned ? Colors.green.shade700 : Colors.blueGrey,
+                                      size: 18,
                                     ),
                                     label: Text(
                                       _isFaceScanned ? 'Face Verified' : 'Live Face Scan',
                                       style: TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 11,
                                         fontWeight: _isFaceScanned ? FontWeight.bold : FontWeight.normal,
                                         color: _isFaceScanned ? Colors.green.shade800 : null,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                                       side: BorderSide(
                                         color: _isFaceScanned ? Colors.green.shade700 : Colors.grey.shade300,
                                         width: _isFaceScanned ? 2 : 1,
@@ -577,7 +619,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         children: [
           Icon(icon, color: Colors.green.shade300, size: 24),
           const SizedBox(width: 16),
-          Text(text, style: const TextStyle(color: Colors.white, fontSize: 16)),
+          Expanded(child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 16))),
         ],
       ),
     );

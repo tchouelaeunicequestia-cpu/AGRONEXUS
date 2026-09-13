@@ -8,6 +8,8 @@ frontend/windows/flutter/ephemeral/
 frontend/android/.gradle/
 frontend/android/app/build/
 frontend/android/gradle-dist/
+.packages
+*.stamp
 
 # --- Spring Boot / Backend ---
 backend/target/
@@ -21,3 +23,13 @@ backend/.gradle/
 *.iml
 .DS_Store
 Thumbs.db
+
+# Large JAR dependencies & Gradle logs
+*.jar
+frontend/android/Configure
+frontend/android/problems-report.html
+frontend/android/288.1
+frontend/android/290.3
+frontend/android/512
+frontend/android/539
+frontend/android/936

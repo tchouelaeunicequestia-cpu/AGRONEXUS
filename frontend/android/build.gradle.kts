@@ -1,3 +1,14 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath(files("kotlin-gradle-plugin-2.0.20-gradle85.jar"))
+        classpath(files("kotlin-compiler-embeddable-2.0.20.jar"))
+    }
+}
+
 allprojects {
     repositories {
         google()
@@ -15,6 +26,7 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+
 subprojects {
     project.evaluationDependsOn(":app")
 }
