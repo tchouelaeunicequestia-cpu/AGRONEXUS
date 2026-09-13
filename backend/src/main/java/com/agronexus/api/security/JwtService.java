@@ -1,112 +1,112 @@
 package com.agronexus.api.security;
 
+import com.agronexus.api.entity.RefreshToken;
 import com.agronexus.api.entity.User;
+import com.agronexus.api.repository.RefreshTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.SecretKey;
+import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 
-/**
- * ==============================================================================
- * AgroNexus JWT Security Token Service
- *
- * WHY: Generates signed JWT Bearer tokens upon successful login and validates
- *      them on every protected API request before granting access.
- *
- * HOW: Uses HMAC-SHA256 (HS256) cryptographic signing.
- *      Each JWT token payload carries three key claims:
- *        - sub      : the user's registered email address (used to reload profile from DB)
- *        - role     : the user's RBAC role (FARMER, BUYER, TRANSPORTER, AGRONOMIST, ADMIN)
- *        - userId   : the user's database ID (used for quick authorization lookups)
- *        - iat      : issued-at timestamp
- *        - exp      : expiration timestamp (24 hours from creation)
- *
- *      Token Flow:
- *        1. User logs in via POST /api/v1/auth/login
- *        2. AuthController calls generateToken(user) here
- *        3. Signed token is returned to the user
- *        4. User sends token in all requests: Authorization: Bearer <token>
- *        5. JwtAuthFilter calls validateToken() & extractEmail() on every request
- * ==============================================================================
- */
 @Service
 public class JwtService {
 
     @Value("${agronexus.jwt.secret}")
     private String jwtSecret;
 
-    @Value("${agronexus.jwt.expiration-ms}")
-    private long jwtExpirationMs;
+    // 15 Minutes Access Token Lifetime (Short-Lived)
+    private static final long ACCESS_TOKEN_EXPIRATION_MS = 15 * 60 * 1000;
 
-    // Build HMAC-SHA256 signing key from the Base64-encoded secret in application.yml
+    // 7 Days Refresh Token Lifetime (Long-Lived)
+    private static final long REFRESH_TOKEN_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000L;
+
+    private final RefreshTokenRepository refreshTokenRepository;
+
+    public JwtService(RefreshTokenRepository refreshTokenRepository) {
+        this.refreshTokenRepository = refreshTokenRepository;
+    }
+
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
-    // ===========================================================================
-    // generateToken(User user)
-    // PURPOSE: Creates a signed JWT containing the user's email, role, and userId.
-    // CALLED BY: AuthController.loginUser() after successful credential verification.
-    // ===========================================================================
-    public String generateToken(User user) {
+    public String generateAccessToken(User user) {
         return Jwts.builder()
-                .subject(user.getEmail())                        // 'sub' claim: user email
-                .claim("role", user.getRole().name())            // RBAC role claim
-                .claim("userId", user.getId())                   // DB user ID claim
-                .issuedAt(new Date())                            // 'iat' claim: current time
-                .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs)) // 'exp' claim
-                .signWith(getSigningKey())                        // HMAC-SHA256 signature
+                .subject(user.getEmail())
+                .claim("role", user.getRole().name())
+                .claim("userId", user.getId())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION_MS))
+                .signWith(getSigningKey())
                 .compact();
     }
 
-    // ===========================================================================
-    // validateToken(String token)
-    // PURPOSE: Verifies token signature and expiry on every protected API request.
-    // CALLED BY: JwtAuthFilter on every incoming HTTP request header.
-    // ===========================================================================
+    @Transactional
+    public RefreshToken createRefreshToken(User user) {
+        refreshTokenRepository.deleteByUser(user);
+
+        RefreshToken refreshToken = RefreshToken.builder()
+                .user(user)
+                .token(UUID.randomUUID().toString())
+                .expiryDate(Instant.now().plusMillis(REFRESH_TOKEN_EXPIRATION_MS))
+                .revoked(false)
+                .build();
+
+        return refreshTokenRepository.save(refreshToken);
+    }
+
+    @Transactional
+    public RefreshToken verifyAndRotateRefreshToken(String tokenStr) {
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(tokenStr)
+                .orElseThrow(() -> new RuntimeException("Invalid refresh token."));
+
+        if (refreshToken.isRevoked()) {
+            refreshTokenRepository.deleteByUser(refreshToken.getUser());
+            throw new RuntimeException("Security Breach: Revoked refresh token reused. All sessions terminated.");
+        }
+
+        if (refreshToken.getExpiryDate().isBefore(Instant.now())) {
+            refreshTokenRepository.delete(refreshToken);
+            throw new RuntimeException("Refresh token has expired. Please log in again.");
+        }
+
+        refreshToken.setRevoked(true);
+        refreshTokenRepository.save(refreshToken);
+
+        return createRefreshToken(refreshToken.getUser());
+    }
+
+    @Transactional
+    public void revokeRefreshToken(String tokenStr) {
+        refreshTokenRepository.findByToken(tokenStr).ifPresent(token -> {
+            token.setRevoked(true);
+            refreshTokenRepository.save(token);
+        });
+    }
+
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token);
+            Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token);
             return true;
         } catch (ExpiredJwtException e) {
-            throw new RuntimeException("JWT token has expired. Please login again.");
+            throw new RuntimeException("JWT token has expired. Please refresh token.");
         } catch (JwtException e) {
             throw new RuntimeException("Invalid JWT token. Access denied.");
         }
     }
 
-    // ===========================================================================
-    // extractEmail(String token)
-    // PURPOSE: Reads the 'sub' claim (user email) from a validated token.
-    // CALLED BY: JwtAuthFilter to reload the user profile from the database.
-    // ===========================================================================
     public String extractEmail(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+        return Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload().getSubject();
     }
 
-    // ===========================================================================
-    // extractRole(String token)
-    // PURPOSE: Reads the 'role' claim from a validated token for RBAC enforcement.
-    // CALLED BY: JwtAuthFilter to set Spring Security granted authorities.
-    // ===========================================================================
     public String extractRole(String token) {
-        return (String) Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .get("role");
+        return (String) Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload().get("role");
     }
 }

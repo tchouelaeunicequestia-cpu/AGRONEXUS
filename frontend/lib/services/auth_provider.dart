@@ -1,37 +1,42 @@
 import 'package:flutter/material.dart';
 import 'secure_storage_service.dart';
+import 'api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final SecureStorageService _storageService = SecureStorageService();
-  
   bool _isAuthenticated = false;
-  String? _token;
+  String? _role;
 
   bool get isAuthenticated => _isAuthenticated;
-  String? get token => _token;
+  String? get role => _role;
 
-  // Check storage on app startup
   Future<void> tryAutoLogin() async {
-    _token = await _storageService.getToken();
-    if (_token != null) {
+    final accessToken = await _storageService.getAccessToken();
+    _role = await _storageService.getUserRole();
+
+    if (accessToken != null) {
       _isAuthenticated = true;
+      notifyListeners();
+    } else {
+      bool refreshed = await ApiService.refreshAccessToken();
+      _isAuthenticated = refreshed;
+      if (_isAuthenticated) {
+        _role = await _storageService.getUserRole();
+      }
       notifyListeners();
     }
   }
 
-  // Login: save token locally and update state
-  Future<void> login(String jwtToken) async {
-    _token = jwtToken;
+  Future<void> login(Map<String, dynamic> authData) async {
     _isAuthenticated = true;
-    await _storageService.saveToken(jwtToken);
+    _role = authData['role'];
     notifyListeners();
   }
 
-  // Logout: clear token locally and update state
   Future<void> logout() async {
-    _token = null;
     _isAuthenticated = false;
-    await _storageService.deleteToken();
+    _role = null;
+    await _storageService.clearSession();
     notifyListeners();
   }
 }
