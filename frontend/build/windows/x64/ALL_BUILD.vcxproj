@@ -157,9 +157,17 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{A9E3A68E-B176-3083-9B13-52B0E14A085C}</Project>
       <Name>frontend</Name>
     </ProjectReference>
+    <ProjectReference Include="C:\Users\lenovo p14s\Music\AGRONEXUS\frontend\build\windows\x64\plugins\geolocator_windows\geolocator_windows_plugin.vcxproj">
+      <Project>{ECEABE19-A5AB-3FA9-B100-22610976B82A}</Project>
+      <Name>geolocator_windows_plugin</Name>
+    </ProjectReference>
     <ProjectReference Include="C:\Users\lenovo p14s\Music\AGRONEXUS\frontend\build\windows\x64\plugins\jni\shared\jni.vcxproj">
       <Project>{942EF52B-F4CD-3729-BF0E-D96B7BDF9501}</Project>
       <Name>jni</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\lenovo p14s\Music\AGRONEXUS\frontend\build\windows\x64\plugins\local_auth_windows\local_auth_windows_plugin.vcxproj">
+      <Project>{5885560D-DD46-3296-A0AB-E5275A7E2429}</Project>
+      <Name>local_auth_windows_plugin</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

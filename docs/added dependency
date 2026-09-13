@@ -1,0 +1,13 @@
+To make them fully functional, we will use two industry-standard Flutter packages:
+
+geolocator: To access the device's actual GPS hardware.
+
+local_auth: To trigger the device's native Face Scan / Biometric authentication.
+
+Here is exactly how to make them functional.
+
+Step 1: Add the required dependencies
+Open your terminal in VS Code and run this command to install the real hardware packages:
+
+Bash
+flutter pub add geolocator local_auth

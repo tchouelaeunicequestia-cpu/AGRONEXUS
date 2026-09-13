@@ -7,6 +7,7 @@ frontend/build/
 frontend/windows/flutter/ephemeral/
 frontend/android/.gradle/
 frontend/android/app/build/
+frontend/android/gradle-dist/
 
 # --- Spring Boot / Backend ---
 backend/target/
