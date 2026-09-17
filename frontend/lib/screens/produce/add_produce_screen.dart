@@ -270,7 +270,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
             'Batch Indexed into PostGIS Network & Escrow Depository!',
             isError: false,
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       } else {
         if (mounted) {
@@ -346,7 +346,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
             const SizedBox(width: 10),
             const Expanded(
               child: Text(
-                'List New Harvest Batch (Fr2.1)',
+                'List New Harvest Batch',
                 style: TextStyle(
                   color: Color(0xFF0B1F14),
                   fontSize: 16,
@@ -418,41 +418,6 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                       children: [
                         Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF6CF8BB),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                children: [
-                                  FadeTransition(
-                                    opacity: _pulseAnimation,
-                                    child: Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFF006C49),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  const Text(
-                                    'FR2.1 Produce Catalog & PostGIS 4326 Index',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF002113),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -1269,7 +1234,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                 _buildCardSection(
                   stepNumber: 'Step 3 of 4',
                   title: 'IoT Silo & Telemetry Link',
-                  subtitle: 'Epic 5: FR5.1 Automated Quality Attestation',
+                  subtitle: 'Automated Quality Attestation',
                   icon: Icons.sensors_rounded,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1620,7 +1585,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                 _buildCardSection(
                   stepNumber: 'Safe Escrow',
                   title: 'Escrow Net Payout Guarantee',
-                  subtitle: 'Epic 3: FR3.3 Smart Liquidity Buffer',
+                  subtitle: 'Smart Liquidity Buffer',
                   icon: Icons.shield_rounded,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

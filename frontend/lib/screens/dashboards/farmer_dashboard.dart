@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../services/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/platform_services.dart';
+import '../produce/add_produce_screen.dart';
 
 class FarmerDashboard extends StatefulWidget {
   const FarmerDashboard({super.key});
@@ -54,82 +55,6 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
         });
       }
     }
-  }
-
-  void _showNewHarvestModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 24,
-          right: 24,
-          top: 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'List New Harvest Lot',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF003820)),
-            ),
-            const SizedBox(height: 16),
-            const TextField(
-              decoration: InputDecoration(
-                labelText: 'Produce Type (e.g. Arabica Coffee, Cocoa)',
-                prefixIcon: Icon(Icons.agriculture_rounded),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const TextField(
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Quantity Available (Kg)',
-                prefixIcon: Icon(Icons.scale_rounded),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const TextField(
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Unit Price (XAF / Kg)',
-                prefixIcon: Icon(Icons.payments_outlined),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF003820),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Harvest lot successfully listed on escrow ledger!'),
-                      backgroundColor: Color(0xFF006c49),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  _fetchLiveDashboardData();
-                },
-                child: const Text('Publish Harvest Lot', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -344,7 +269,17 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                 ),
-                                onPressed: _showNewHarvestModal,
+                                onPressed: () async {
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const AddProduceScreen(),
+                                    ),
+                                  );
+                                  if (result == true || mounted) {
+                                    _fetchLiveDashboardData();
+                                  }
+                                },
                                 icon: const Icon(Icons.add_circle_outline_rounded),
                                 label: const Text('List New Harvest Lot', style: TextStyle(fontWeight: FontWeight.bold)),
                               ),

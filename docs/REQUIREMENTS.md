@@ -35,7 +35,7 @@ This document specifies the complete functional epics, non-functional requiremen
 - **FR1.4** `[PROTOTYPE / MOCK]`: The system shall support live face scan verification metadata logging during onboarding. *Status Note*: Biometric UI flow exists on Flutter frontend (`register_screen.dart`); backend audit logging endpoint for face metadata is pending.
 
 ### Epic 2: Spatial Produce Catalog & Discovery
-- **FR2.1** `[PARTIALLY IMPLEMENTED]`: Farmers shall be able to create, update, and manage produce listings including price per unit, available quantity, category, and PostGIS location coordinates (`Point, SRID 4326`). *Status Note*: Product creation via `ProductController.java` is implemented; update/delete endpoints and farmer listing query (`/products/my-listings`) are pending.
+- **FR2.1** `[PARTIALLY IMPLEMENTED]`: Farmers shall be able to create, update, delete, and manage produce listings including price per unit, available quantity, category, and PostGIS location coordinates (`Point, SRID 4326`). *Status Note*: Product creation via `ProductController.java` is implemented; update/delete endpoints and farmer listing query (`/products/my-listings`) are pending.
 - **FR2.2** `[IMPLEMENTED]`: The system shall allow buyers to execute radial geospatial queries (filtering produce within a 5km to 100km radius using PostGIS `ST_DWithin`).
 - **FR2.3** `[PROTOTYPE / MOCK]`: The system shall compute dynamic distance badges and estimated freight distance for search results. *Status Note*: Spatial distances are queried in database, but dynamic distance badges on cards use estimated mock visual distance indicators.
 
