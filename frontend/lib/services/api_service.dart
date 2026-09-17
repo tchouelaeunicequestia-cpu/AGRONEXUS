@@ -1,6 +1,8 @@
 // lib/services/api_service.dart
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import 'secure_storage_service.dart';
 
 class ApiService {
@@ -20,10 +22,7 @@ class ApiService {
     final response = await http.post(
       Uri.parse('$baseUrl/api/v1/auth/login'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
+      body: jsonEncode({'email': email, 'password': password}),
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -35,6 +34,20 @@ class ApiService {
       final errorBody = jsonDecode(response.body);
       throw Exception(errorBody['error'] ?? 'Authentication failed.');
     }
+  }
+
+  /// Returns the current account from the server, including its authoritative role.
+  static Future<Map<String, dynamic>> getCurrentUser() async {
+    final response = await authenticatedRequest('/api/v1/auth/me');
+    if (response.statusCode == 200) {
+      final payload = jsonDecode(response.body);
+      if (payload is Map<String, dynamic>) {
+        return payload;
+      }
+    }
+    throw Exception(
+      'Unable to verify the current session (HTTP ${response.statusCode}).',
+    );
   }
 
   /// Register a new user role with biometric profile data
@@ -75,7 +88,9 @@ class ApiService {
   }) async {
     final activeToken =
         token ?? globalAccessToken ?? await _storage.getAccessToken();
-    final uri = Uri.parse(endpoint.startsWith('http') ? endpoint : '$baseUrl$endpoint');
+    final uri = Uri.parse(
+      endpoint.startsWith('http') ? endpoint : '$baseUrl$endpoint',
+    );
 
     Map<String, String> headers = {
       'Content-Type': 'application/json',
@@ -83,11 +98,60 @@ class ApiService {
     };
 
     if (method == 'POST') {
-      return await http.post(uri, headers: headers, body: body != null ? jsonEncode(body) : null);
+      return await http.post(
+        uri,
+        headers: headers,
+        body: body != null ? jsonEncode(body) : null,
+      );
     } else if (method == 'PUT') {
-      return await http.put(uri, headers: headers, body: body != null ? jsonEncode(body) : null);
+      return await http.put(
+        uri,
+        headers: headers,
+        body: body != null ? jsonEncode(body) : null,
+      );
     } else {
       return await http.get(uri, headers: headers);
+    }
+  }
+
+  /// Opens the agronomist's live stream of threshold-breach telemetry alerts.
+  static Stream<Map<String, dynamic>> telemetryAlertStream() async* {
+    final activeToken = globalAccessToken ?? await _storage.getAccessToken();
+    final request = http.Request(
+      'GET',
+      Uri.parse('$baseUrl/api/v1/telemetry/alerts/stream'),
+    );
+    request.headers['Accept'] = 'text/event-stream';
+    if (activeToken != null) {
+      request.headers['Authorization'] = 'Bearer $activeToken';
+    }
+
+    final response = await request.send();
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Unable to connect to telemetry alert stream '
+        '(HTTP ${response.statusCode}).',
+      );
+    }
+
+    String? eventName;
+    final dataLines = <String>[];
+    await for (final line
+        in response.stream
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())) {
+      if (line.startsWith('event:')) {
+        eventName = line.substring(6).trim();
+      } else if (line.startsWith('data:')) {
+        dataLines.add(line.substring(5).trimLeft());
+      } else if (line.isEmpty && dataLines.isNotEmpty) {
+        final payload = jsonDecode(dataLines.join('\n'));
+        if (eventName == 'telemetry-alert' && payload is Map<String, dynamic>) {
+          yield payload;
+        }
+        eventName = null;
+        dataLines.clear();
+      }
     }
   }
 
@@ -104,14 +168,17 @@ class ApiService {
         globalAccessToken = data['accessToken'];
         await _storage.saveSession(
           accessToken: data['accessToken']?.toString() ?? '',
-          refreshToken: data['refreshToken']?.toString() ??
-              await _storage.getRefreshToken() ?? '',
+          refreshToken:
+              data['refreshToken']?.toString() ??
+              await _storage.getRefreshToken() ??
+              '',
           role: await _storage.getUserRole() ?? 'BUYER',
           userId: await _storage.getUserId(),
           name: await _storage.getUserName(),
           email: await _storage.getUserEmail(),
         );
-        globalRefreshToken = data['refreshToken']?.toString() ??
+        globalRefreshToken =
+            data['refreshToken']?.toString() ??
             await _storage.getRefreshToken();
         return true;
       }
@@ -173,7 +240,9 @@ class ApiService {
   /// Fetches real-time metrics for the Transporter dashboard
   static Future<Map<String, dynamic>> getTransporterMetrics() async {
     try {
-      final response = await authenticatedRequest('/api/v1/transporter/metrics');
+      final response = await authenticatedRequest(
+        '/api/v1/transporter/metrics',
+      );
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }

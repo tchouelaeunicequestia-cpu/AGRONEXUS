@@ -2,6 +2,8 @@
 
 This document specifies the complete functional epics, non-functional requirements, status traceability matrix, and current implementation progress for the **AgroNexus** platform.
 
+> **Status snapshot:** 17 September 2026. This matrix reflects the current backend and Flutter implementation, including the admin account control workflow, live telemetry alerts, and transporter corridor map.
+
 > [!NOTE]
 > **Implementation Status Legend**:
 > - `[IMPLEMENTED]`: Operational in source code and connected across backend & frontend.
@@ -15,14 +17,14 @@ This document specifies the complete functional epics, non-functional requiremen
 
 | Epic / Feature Area | Functional Requirements | Status | Estimated Completion |
 |---|---|---|---:|
-| **Epic 1: Auth & Identity** | FR1.1 – FR1.4 | Partially Implemented | 60% |
+| **Epic 1: Auth & Identity** | FR1.1 – FR1.4 | Partially Implemented | 75% |
 | **Epic 2: Produce Catalog & Spatial Discovery** | FR2.1 – FR2.3 | Partially Implemented | 65% |
 | **Epic 3: Sales, Escrow & Payments** | FR3.1 – FR3.4 | Backend Implemented / Frontend Pending | 45% |
-| **Epic 4: Transport & Logistics** | FR4.1 – FR4.3 | Scaffolding / Pending | 10% |
-| **Epic 5: Storage & IoT Telemetry** | FR5.1 – FR5.3 | Ingestion Implemented / UI Mocked | 50% |
+| **Epic 4: Transport & Logistics** | FR4.1 – FR4.3 | Corridor UI Implemented / Dispatch Pending | 35% |
+| **Epic 5: Storage & IoT Telemetry** | FR5.1 – FR5.3 | Ingestion & Live Alerts Implemented | 75% |
 | **Epic 6: RAG AI Assistant** | FR6.1 – FR6.3 | Keyword Guardrail Prototype | 35% |
 | **Epic 7: User Profile & Settings** | FR7.1 – FR7.2 | Pending | 0% |
-| **Overall Platform Status** | **FR1.1 – FR7.2** | **Working Prototype / MVP Stage** | **~39–45%** |
+| **Overall Platform Status** | **FR1.1 – FR7.2** | **Working Prototype / MVP Stage** | **~50%** |
 
 ---
 
@@ -31,7 +33,7 @@ This document specifies the complete functional epics, non-functional requiremen
 ### Epic 1: Authentication & Identity Management
 - **FR1.1** `[IMPLEMENTED]`: The system shall support multi-role user registration (`FARMER`, `BUYER`, `TRANSPORTER`, `AGRONOMIST`, `ADMIN`).
 - **FR1.2** `[IMPLEMENTED]`: The system shall enforce JWT-based stateless authentication with secure refresh token rotation mechanics (`JwtService.java`, `SecurityConfig.java`, Flutter `auth_provider.dart`).
-- **FR1.3** `[PARTIALLY IMPLEMENTED]`: The system shall verify identity credentials. *Status Note*: Administrative approval before elevating user roles is specified in the schema/roles, but registration currently sets accounts as verified immediately.
+- **FR1.3** `[IMPLEMENTED]`: The system shall verify identity credentials. *Status Note*: Role-gated admin account management supports approval and de-approval through `/api/v1/admin/approve-user/{userId}` and `/api/v1/admin/deapprove-user/{userId}`; administrator accounts cannot be de-approved.
 - **FR1.4** `[PROTOTYPE / MOCK]`: The system shall support live face scan verification metadata logging during onboarding. *Status Note*: Biometric UI flow exists on Flutter frontend (`register_screen.dart`); backend audit logging endpoint for face metadata is pending.
 
 ### Epic 2: Spatial Produce Catalog & Discovery
@@ -51,14 +53,14 @@ This document specifies the complete functional epics, non-functional requiremen
 - **FR3.4** `[PENDING]`: The system shall provide an admin arbitration workflow for escrow disputes, backed by IoT storage logs and delivery audit trails.
 
 ### Epic 4: Transport & Logistics Dispatch
-- **FR4.1** `[PROTOTYPE / MOCK]`: Transporters shall view available delivery jobs filtered by proximity and vehicle freight capacity. *Status Note*: Transporter role and `EscrowStatus` enums exist; transporter dashboard UI is a placeholder.
-- **FR4.2** `[PARTIALLY IMPLEMENTED]`: The system shall track order delivery state transitions (`PENDING` $\rightarrow$ `HELD_IN_ESCROW` $\rightarrow$ `DISPATCHED` $\rightarrow$ `IN_TRANSIT` $\rightarrow$ `DELIVERED` $\rightarrow$ `COMPLETED`). *Status Note*: `EscrowStatus` enum contains all state values, but automated trigger logic is pending.
+- **FR4.1** `[PARTIALLY IMPLEMENTED]`: Transporters shall view available delivery jobs filtered by proximity and vehicle freight capacity. *Status Note*: The modern transporter dashboard now includes an interactive OpenStreetMap corridor view with farmer depot, live GPS position when available, and buyer hub markers; job filtering and dispatch assignment remain pending.
+- **FR4.2** `[PARTIALLY IMPLEMENTED]`: The system shall track order delivery state transitions (`PENDING` $\rightarrow$ `HELD_IN_ESCROW` $\rightarrow$ `DISPATCHED` $\rightarrow$ `IN_TRANSIT` $\rightarrow$ `DELIVERED` $\rightarrow$ `COMPLETED`). *Status Note*: `EscrowStatus` enum contains all state values and the transporter corridor UI is wired, but automated order transition and live backend vehicle tracking remain pending.
 - **FR4.3** `[PENDING]`: Transporters and buyers shall submit cryptographic or multi-party delivery confirmations upon order handover.
 
 ### Epic 5: Storage Conservation & Cyber-Physical IoT Telemetry
 - **FR5.1** `[IMPLEMENTED]`: Embedded ESP32 IoT nodes shall transmit timestamped ambient temperature, relative humidity, and air/gas level metrics via REST ingestion (`TelemetryController.java`, `TelemetryLog.java`).
 - **FR5.2** `[IMPLEMENTED]`: The system shall evaluate incoming telemetry against safe FAO/USDA crop conservation thresholds and flag alert states.
-- **FR5.3** `[PROTOTYPE / MOCK]`: The system shall trigger push/email alerts to storage owners when metrics breach safety limits. *Status Note*: Backend flags alert status; live push/email notifications and farmer dashboard chart connections currently use seeded/mock data.
+- **FR5.3** `[PARTIALLY IMPLEMENTED]`: The system shall trigger push/email alerts to storage owners when metrics breach safety limits. *Status Note*: Telemetry breaches are now published to the authenticated Server-Sent Events endpoint `/api/v1/telemetry/alerts/stream` and displayed immediately in the Agronomist dashboard. Push/email delivery and farmer dashboard chart connections remain pending.
 
 ### Epic 6: Domain-Guarded RAG AI Assistant
 - **FR6.1** `[PARTIALLY IMPLEMENTED]`: Users shall query the AI assistant for crop conservation advice, pest management, storage parameters, and market standards.

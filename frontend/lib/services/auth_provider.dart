@@ -1,4 +1,7 @@
+// lib/services/auth_provider.dart (Updated with Biometric Lock)
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
+
 import 'secure_storage_service.dart';
 import 'api_service.dart';
 
@@ -7,12 +10,13 @@ class UserProfile {
   final String? name;
   final String? email;
   final String? role;
-
   UserProfile({this.id, this.name, this.email, this.role});
 }
 
 class AuthProvider extends ChangeNotifier {
   final SecureStorageService _storageService = SecureStorageService();
+  final LocalAuthentication _localAuth = LocalAuthentication();
+
   bool _isAuthenticated = false;
   String? _role;
   UserProfile? _currentUser;
@@ -23,27 +27,46 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> tryAutoLogin() async {
     final accessToken = await _storageService.getAccessToken();
-    _role = await _storageService.getUserRole();
-    final name = await _storageService.getUserName();
-    final email = await _storageService.getUserEmail();
-    final id = await _storageService.getUserId();
+    if (accessToken == null) {
+      _isAuthenticated = false;
+      notifyListeners();
+      return;
+    }
 
-    if (accessToken != null) {
+    try {
+      // Enforce biometric check on session restoration
+      bool canCheck =
+          await _localAuth.canCheckBiometrics ||
+          await _localAuth.isDeviceSupported();
+      if (canCheck) {
+        bool didAuthenticate = await _localAuth.authenticate(
+          localizedReason:
+              'Verify your identity to resume your AgroNexus session.',
+          biometricOnly: false,
+        );
+        if (!didAuthenticate) {
+          await logout();
+          return;
+        }
+      }
+
+      _role = await _storageService.getUserRole();
+      final profile = await ApiService.getCurrentUser();
+      _role = profile['role']?.toString();
+      final name = profile['fullName']?.toString() ??
+          await _storageService.getUserName();
+      final email =
+          profile['email']?.toString() ?? await _storageService.getUserEmail();
+      final id = profile['userId']?.toString() ??
+          await _storageService.getUserId();
+
       _isAuthenticated = true;
       ApiService.globalAccessToken = accessToken;
       ApiService.globalUserId = int.tryParse(id ?? '');
       _currentUser = UserProfile(id: id, name: name, email: email, role: _role);
       notifyListeners();
-    } else {
-      bool refreshed = await ApiService.refreshAccessToken();
-      _isAuthenticated = refreshed;
-      if (_isAuthenticated) {
-        _role = await _storageService.getUserRole();
-        ApiService.globalAccessToken = await _storageService.getAccessToken();
-        ApiService.globalUserId = int.tryParse(await _storageService.getUserId() ?? '');
-        _currentUser = UserProfile(id: id, name: name, email: email, role: _role);
-      }
-      notifyListeners();
+    } catch (_) {
+      await logout();
     }
   }
 
@@ -51,7 +74,9 @@ class AuthProvider extends ChangeNotifier {
     _isAuthenticated = true;
     ApiService.globalAccessToken = authData['accessToken']?.toString();
     ApiService.globalRefreshToken = authData['refreshToken']?.toString();
-    ApiService.globalUserId = int.tryParse(authData['userId']?.toString() ?? '');
+    ApiService.globalUserId = int.tryParse(
+      authData['userId']?.toString() ?? '',
+    );
     _role = authData['role']?.toString();
     _currentUser = UserProfile(
       id: authData['userId']?.toString(),
@@ -60,7 +85,6 @@ class AuthProvider extends ChangeNotifier {
       role: _role,
     );
 
-    // Persist profile data into secure storage
     await _storageService.saveSession(
       accessToken: authData['accessToken']?.toString() ?? '',
       refreshToken: authData['refreshToken']?.toString() ?? '',
@@ -69,7 +93,6 @@ class AuthProvider extends ChangeNotifier {
       name: _currentUser?.name,
       email: _currentUser?.email,
     );
-
     notifyListeners();
   }
 

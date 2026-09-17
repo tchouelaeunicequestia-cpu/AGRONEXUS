@@ -3,11 +3,16 @@ package com.agronexus.api.controller;
 import com.agronexus.api.entity.TelemetryLog;
 import com.agronexus.api.repository.TelemetryLogRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * ==============================================================================
@@ -24,6 +29,8 @@ import java.util.Map;
 public class TelemetryController {
 
     private final TelemetryLogRepository telemetryLogRepository;
+    private final CopyOnWriteArrayList<SseEmitter> alertSubscribers =
+            new CopyOnWriteArrayList<>();
 
     public TelemetryController(TelemetryLogRepository telemetryLogRepository) {
         this.telemetryLogRepository = telemetryLogRepository;
@@ -51,12 +58,48 @@ public class TelemetryController {
                 .build();
 
         TelemetryLog saved = telemetryLogRepository.save(log);
+        if (alert) {
+            publishAlert(saved);
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    @GetMapping(value = "/alerts/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PreAuthorize("hasRole('AGRONOMIST')")
+    public SseEmitter streamAlerts() {
+        SseEmitter emitter = new SseEmitter(0L);
+        alertSubscribers.add(emitter);
+        emitter.onCompletion(() -> alertSubscribers.remove(emitter));
+        emitter.onTimeout(() -> alertSubscribers.remove(emitter));
+        emitter.onError(error -> alertSubscribers.remove(emitter));
+        try {
+            emitter.send(SseEmitter.event()
+                    .name("connected")
+                    .data(Map.of("status", "connected")));
+        } catch (IOException error) {
+            alertSubscribers.remove(emitter);
+            emitter.completeWithError(error);
+        }
+        return emitter;
     }
 
     // GET /api/v1/telemetry/node/{nodeId} — Latest 50 sensor logs for a storage unit
     @GetMapping("/node/{nodeId}")
     public ResponseEntity<List<TelemetryLog>> getNodeLogs(@PathVariable String nodeId) {
         return ResponseEntity.ok(telemetryLogRepository.findTop50ByNodeIdOrderByRecordedAtDesc(nodeId));
+    }
+
+    private void publishAlert(TelemetryLog alert) {
+        alertSubscribers.removeIf(emitter -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("telemetry-alert")
+                        .data(alert));
+                return false;
+            } catch (IOException error) {
+                emitter.completeWithError(error);
+                return true;
+            }
+        });
     }
 }

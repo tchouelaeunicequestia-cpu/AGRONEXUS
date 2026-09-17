@@ -8,7 +8,9 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -107,6 +109,21 @@ public class AuthController {
                 "role", user.getRole().name(),
                 "email", user.getEmail(),
                 "fullName", user.getFullName()
+        ));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> currentUser(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Authentication is required."));
+        }
+        return ResponseEntity.ok(Map.of(
+                "userId", user.getId(),
+                "role", user.getRole().name(),
+                "email", user.getEmail(),
+                "fullName", user.getFullName(),
+                "isVerified", user.getIsVerified()
         ));
     }
 
