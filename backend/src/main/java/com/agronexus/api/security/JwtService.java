@@ -50,14 +50,20 @@ public class JwtService {
 
     @Transactional
     public RefreshToken createRefreshToken(User user) {
-        refreshTokenRepository.deleteByUser(user);
-
-        RefreshToken refreshToken = RefreshToken.builder()
+        // Upsert approach: Find existing refresh token for the user or create a new one to prevent duplicate key violations
+        RefreshToken refreshToken = refreshTokenRepository.findByUser(user)
+                .map(existingToken -> {
+                    existingToken.setToken(UUID.randomUUID().toString());
+                    existingToken.setExpiryDate(Instant.now().plusMillis(REFRESH_TOKEN_EXPIRATION_MS));
+                    existingToken.setRevoked(false);
+                    return existingToken;
+                })
+                .orElseGet(() -> RefreshToken.builder()
                 .user(user)
                 .token(UUID.randomUUID().toString())
                 .expiryDate(Instant.now().plusMillis(REFRESH_TOKEN_EXPIRATION_MS))
                 .revoked(false)
-                .build();
+                .build());
 
         return refreshTokenRepository.save(refreshToken);
     }

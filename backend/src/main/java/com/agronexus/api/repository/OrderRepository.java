@@ -27,4 +27,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // Retrieve all orders assigned to a specific transporter
     List<Order> findByTransporterId(Long transporterId);
+
+    List<Order> findByProductFarmerId(Long farmerId);
 }

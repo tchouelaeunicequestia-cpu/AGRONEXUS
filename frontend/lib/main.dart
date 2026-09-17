@@ -1,11 +1,14 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
+import 'screens/dashboards/farmer_dashboard.dart';
+import 'screens/dashboards/buyer_dashboard.dart';
+import 'screens/dashboards/transporter_dashboard.dart';
+import 'screens/dashboards/agronomist_dashboard.dart';
+import 'screens/dashboards/admin_dashboard.dart';
 import 'services/auth_provider.dart';
-
-// Import your future dashboard screens here
-// import 'screens/dashboards/farmer_dashboard.dart';
-// import 'screens/dashboards/buyer_dashboard.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(
@@ -26,10 +29,7 @@ class AgroNexusApp extends StatelessWidget {
     return MaterialApp(
       title: 'AgroNexus',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        scaffoldBackgroundColor: Colors.white,
-      ),
+      theme: AppTheme.lightTheme,
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           if (!auth.isAuthenticated) {
@@ -39,17 +39,21 @@ class AgroNexusApp extends StatelessWidget {
           // FR1.3: Role-Based Access Control Dashboard Router
           switch (auth.role) {
             case 'FARMER':
-              return const RoleDashboardPlaceholder(roleTitle: 'Farmer Dashboard');
+              return const FarmerDashboard();
             case 'BUYER':
-              return const RoleDashboardPlaceholder(roleTitle: 'Buyer Marketplace');
+              return const BuyerDashboard();
             case 'TRANSPORTER':
-              return const RoleDashboardPlaceholder(roleTitle: 'Transporter Logistics Hub');
+              return const TransporterDashboard();
             case 'AGRONOMIST':
-              return const RoleDashboardPlaceholder(roleTitle: 'Agronomist Advisory Console');
+              return const AgronomistDashboard();
             case 'ADMIN':
-              return const RoleDashboardPlaceholder(roleTitle: 'System Admin Control Panel');
+              return const AdminDashboard();
             default:
-              return const RoleDashboardPlaceholder(roleTitle: 'General Dashboard');
+              return const RoleDashboardPlaceholder(
+                roleTitle: 'General Dashboard',
+                icon: Icons.dashboard_outlined,
+                accentColor: AppTheme.primaryEmerald,
+              );
           }
         },
       ),
@@ -59,35 +63,131 @@ class AgroNexusApp extends StatelessWidget {
 
 class RoleDashboardPlaceholder extends StatelessWidget {
   final String roleTitle;
-  const RoleDashboardPlaceholder({super.key, required this.roleTitle});
+  final IconData icon;
+  final Color accentColor;
+
+  const RoleDashboardPlaceholder({
+    super.key,
+    required this.roleTitle,
+    required this.icon,
+    required this.accentColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
+    final user = auth.currentUser;
+    final displayName = user?.name ?? 'User';
+    final email = user?.email ?? 'No email available';
+    final initials = displayName.trim().isEmpty
+        ? '?'
+        : displayName.trim().substring(0, 1).toUpperCase();
     return Scaffold(
+      backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
-        title: Text(roleTitle),
-        backgroundColor: Colors.green.shade800,
+        flexibleSpace: const FlexibleSpaceBar(
+          background: DecoratedBox(
+            decoration: BoxDecoration(gradient: AppTheme.headerGradient),
+          ),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.eco_rounded, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Text(roleTitle),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: 'Sign Out',
             onPressed: () => auth.logout(),
           ),
         ],
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.verified_user, size: 64, color: Colors.green.shade700),
-            const SizedBox(height: 16),
-            Text(
-              'Welcome to $roleTitle',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppTheme.lightBorder),
+              boxShadow: AppTheme.cardShadow,
             ),
-            const SizedBox(height: 8),
-            Text('Enforced RBAC Role: ${auth.role}'),
-          ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: accentColor,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  roleTitle,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.darkSlate,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '$displayName\n$email\nAuthenticated RBAC Role: ${auth.role}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.mutedGrey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundLight,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified_user_rounded, color: AppTheme.successGreen, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Your authenticated AgroNexus profile is active.',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryEmerald),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

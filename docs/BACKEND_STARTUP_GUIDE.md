@@ -270,14 +270,19 @@ agronexus:
 
 ---
 
-## 🔜 Next Steps (After Server Starts Successfully)
+---
 
-| # | Task | Description |
-|---|------|-------------|
-| 1 | Test `/auth/register` | Create a FARMER and a BUYER account |
-| 2 | Test `/auth/login` | Receive a real signed JWT token |
-| 3 | Build `ProductController` | Radial geospatial produce catalog endpoint |
-| 4 | Build `EscrowController` | MTN/Orange Money disbursement endpoint |
-| 5 | Build `TelemetryController` | IoT ESP32 data ingestion endpoint |
-| 6 | Full API test with Postman | End-to-end flow: register → list produce → order |
-| 7 | Deploy to Render.com | Push Docker image to production |
+## 🔜 Current Status & Active Next Implementation Steps
+
+| # | Task | Status | Description |
+|---|------|---|-------------|
+| 1 | Auth Endpoints (`/auth/register`, `/auth/login`) | ✅ Completed | JWT authentication and refresh token rotation working. |
+| 2 | Produce Controller (`/api/v1/products`) | ✅ Scaffolding Built | Product creation and PostGIS radial search (`/nearby`) working. |
+| 3 | Escrow Controller (`/api/v1/escrow/order`) | ✅ Scaffolding Built | Order entity & Mobile Money deposit fee formulas working. |
+| 4 | Telemetry Controller (`/api/v1/telemetry/log`) | ✅ Scaffolding Built | REST IoT sensor data ingestion & threshold checking working. |
+| 5 | AI Assistant Controller (`/api/v1/ai/query`) | ✅ Prototype Built | Rule-based agricultural guardrails working. |
+| 6 | **Farmer Listing Query Endpoint** | ⏳ Active Next Step | Add `GET /api/v1/products/my-listings` to `ProductController.java`. |
+| 7 | **Frontend Checkout Connection** | ⏳ Active Next Step | Connect Flutter produce order screen to `/api/v1/escrow/order`. |
+| 8 | **Transporter Workflow Execution** | ⏳ Active Next Step | Build Transporter dashboard UI & order state machine transitions (`PENDING` $\rightarrow$ `DELIVERED`). |
+| 9 | **Vector RAG Pipeline** | ⏳ Active Next Step | Ingest FAO/USDA documents into `pgvector` for LLM top-$k$ similarity queries. |
+

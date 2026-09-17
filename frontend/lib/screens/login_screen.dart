@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_provider.dart';
 import '../services/api_service.dart';
+import '../theme/app_theme.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,16 +12,39 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _keepSessionActive = true; // Now interactive state
+
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.04),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
+
+    _animController.forward();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
@@ -40,12 +64,14 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(
           content: const Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 10),
-              Text('Login Successful! Redirecting...'),
+              Icon(Icons.check_circle_rounded, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Welcome back to AgroNexus!', style: TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
-          backgroundColor: Colors.green.shade700,
+          backgroundColor: const Color(0xFF0f5132),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -53,30 +79,30 @@ class _LoginScreenState extends State<LoginScreen> {
       await Provider.of<AuthProvider>(context, listen: false).login(authData);
     } catch (e) {
       if (!mounted) return;
-
       showDialog(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: const Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.red),
+              Icon(Icons.error_outline_rounded, color: AppTheme.errorRed),
               SizedBox(width: 10),
-              Text('Authentication Error'),
+              Text('Authentication Failed', style: TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
           content: Text(
             e.toString().replaceAll("Exception: ", ""),
-            style: const TextStyle(fontSize: 14),
+            style: const TextStyle(fontSize: 14, color: AppTheme.darkSlate),
           ),
           actions: [
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade700,
+                backgroundColor: const Color(0xFF0f5132),
                 foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('OK'),
+              child: const Text('Try Again'),
             ),
           ],
         ),
@@ -89,125 +115,415 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isDesktop = constraints.maxWidth > 800;
-
-          return Row(
-            children: [
-              if (isDesktop)
-                Expanded(
-                  flex: 5,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: const NetworkImage('https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=1920&auto=format&fit=crop'),
-                        fit: BoxFit.cover,
-                        colorFilter: ColorFilter.mode(
-                          Colors.black.withValues(alpha: 0.55),
-                          BlendMode.darken,
-                        ),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(48.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.dashboard_customize, size: 64, color: Colors.white),
-                          const SizedBox(height: 24),
-                          const Text('Welcome Back.', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white)),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Access your dashboard to manage escrow\ntransactions, telemetry, and logistics.',
-                            style: TextStyle(fontSize: 20, color: Colors.green.shade50, height: 1.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              Expanded(
-                flex: 7,
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? 48.0 : 24.0,
-                      vertical: 32.0,
-                    ),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 450),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: const Color(0xFFf8fafc),
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: Column(
+              children: [
+                // Top App Navigation / Header Bar
+                Container(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
                           children: [
-                            if (!isDesktop) ...[
-                              Icon(Icons.eco, size: 48, color: Colors.green.shade800),
-                              const SizedBox(height: 24),
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF16a34a),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.eco_rounded, color: Colors.white, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'AgroNexus',
+                                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0f172a)),
+                              ),
+                              Text(
+                                'Identity & RBAC Access Gateway',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF64748b), fontWeight: FontWeight.w500),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ],
-                            Text('Sign In', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.grey.shade900)),
-                            const SizedBox(height: 8),
-                            Text('Enter your credentials to access AgroNexus.', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
-                            const SizedBox(height: 48),
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: InputDecoration(
-                                labelText: 'Email Address',
-                                prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                              validator: (v) => v!.isEmpty ? 'Required' : null,
                             ),
-                            const SizedBox(height: 24),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: true,
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                              validator: (v) => v!.isEmpty ? 'Required' : null,
-                            ),
-                            const SizedBox(height: 40),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 52,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green.shade800,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                onPressed: _isLoading ? null : _submitLogin,
-                                child: _isLoading
-                                    ? const CircularProgressIndicator(color: Colors.white)
-                                    : const Text('Access Dashboard', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            Center(
-                              child: TextButton(
-                                onPressed: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
-                                },
-                                child: Text('Create a new ecosystem account', style: TextStyle(color: Colors.green.shade800, fontWeight: FontWeight.bold)),
-                              ),
-                            ),
+                          ),
                           ],
                         ),
                       ),
+                      Flexible(
+                        child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFdcf4e1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFb8e7c8)),
+                        ),
+                        child: const Text(
+                          'BEAC / CEMAC Ready',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF006c49)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Main Responsive Container
+                Expanded(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1100),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: const Color(0xFFe2e8f0)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 24,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: LayoutBuilder(
+                            builder: (context, boxConstraints) {
+                              final isWide = boxConstraints.maxWidth > 850;
+                              if (isWide) {
+                                return Row(
+                                  children: [
+                                    Expanded(flex: 5, child: _buildLeftTeaserPanel()),
+                                    Expanded(flex: 7, child: _buildRightLoginForm(isDesktop: true)),
+                                  ],
+                                );
+                              } else {
+                                return Column(
+                                  children: [
+                                    _buildLeftTeaserPanel(),
+                                    _buildRightLoginForm(isDesktop: false),
+                                  ],
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
+
+                // Global Footer
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(top: BorderSide(color: Color(0xFFe2e8f0))),
+                  ),
+                  child: const Text(
+                    'AgroNexus Ecosystem • Designed for The ICT University B.Sc. Software Engineering & AI Thesis Protocol',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF64748b)),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeftTeaserPanel() {
+    return Container(
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: const NetworkImage(
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuAeQ1oQkkQylhbor-QfqoLQ9Yls4uOQhf9ZDXJAy_QHbCeETZN7Lg0tRwMbWbkWJe4nT1Uq9gZirqlhqZVdj8-yXG-sSpZyv3NwJkqIWaGPuWf9sYOT-RvfYbVRshioZdYZ9kxdw5kd78n_4-_DAzkAEz-eZ3R_pf5Cl6ciHJHVVYaLaX6Y5TntGzHa4_4TkOa_9GnCxXSlsmQDoomG8UwDUlQaTamHUXmnicPWGVbzKM7R6z7DXuQl',
+          ),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            Colors.black.withValues(alpha: 0.75),
+            BlendMode.darken,
+          ),
+        ),
+      ),
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFF4ade80), shape: BoxShape.circle)),
+                    const SizedBox(width: 8),
+                    const Text('Central African AgTech Mesh', style: TextStyle(color: Color(0xFF6cf8bb), fontSize: 11, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Connecting Farms, Escrow & IoT in One Unified Hub',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white, height: 1.2),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Role-based authentication providing smallholders, off-takers, transporters, and agronomists with verified trust pipelines.',
+                style: TextStyle(fontSize: 13, color: Color(0xFFe2e8f0), height: 1.5),
+              ),
+              const SizedBox(height: 24),
+              _buildFeatureHighlightCard(
+                icon: Icons.shield_outlined,
+                title: 'Multi-Sig Escrow Vault',
+                description: '100% net farmer payout with 1.5% MoMo fee buffering & dual verification.',
+              ),
+              const SizedBox(height: 12),
+              _buildFeatureHighlightCard(
+                icon: Icons.memory,
+                title: 'ESP32 Silo Telemetry',
+                description: 'Live DHT22 microclimate & MQ-135 decay gas sensors logged in real time.',
+              ),
+              const SizedBox(height: 12),
+              _buildFeatureHighlightCard(
+                icon: Icons.radar,
+                title: 'PostGIS Radial Exchange',
+                description: 'Precise 5km–100km radius produce matching directly indexed in SRID 4326.',
               ),
             ],
-          );
-        },
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.only(top: 16),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.15))),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Backend: Spring Boot 3.3 · Java 21', style: TextStyle(fontSize: 11, color: Color(0xFFcbd5e1))),
+                Text('v4.2.0 Release', style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFF4ade80), fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureHighlightCard({required IconData icon, required String title, required String description}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF22c55e).withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: const Color(0xFF4ade80), size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
+                const SizedBox(height: 2),
+                Text(description, style: const TextStyle(fontSize: 11, color: Color(0xFFcbd5e1), height: 1.3)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRightLoginForm({required bool isDesktop}) {
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.all(isDesktop ? 36.0 : 20.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Sign In', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF1e293b))),
+                    SizedBox(height: 4),
+                    Text('Access your verified AgroNexus workspace', style: TextStyle(fontSize: 12, color: Color(0xFF64748b))),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFf8fafc),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFe2e8f0)),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('SYSTEM NODE', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF64748b))),
+                      Text('Centre Region Hub', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0f5132))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Email Field (Blank and ready for secure input)
+            TextFormField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Registered Email Address',
+                hintText: 'e.g. farmer@agronexus.io',
+                prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF64748b)),
+              ),
+              validator: (v) => v!.isEmpty ? 'Email is required' : null,
+            ),
+            const SizedBox(height: 16),
+
+            // Password Field (Blank and ready for secure input)
+            TextFormField(
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                hintText: '••••••••',
+                prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF64748b)),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    color: const Color(0xFF64748b),
+                  ),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                ),
+              ),
+              validator: (v) => v!.isEmpty ? 'Password is required' : null,
+            ),
+            const SizedBox(height: 16),
+
+            // Interactive Checkbox for Session State
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _keepSessionActive,
+                      onChanged: (val) => setState(() => _keepSessionActive = val ?? true),
+                      activeColor: const Color(0xFF0f5132),
+                    ),
+                    const Text('Keep session active (24h JWT)', style: TextStyle(fontSize: 11, color: Color(0xFF64748b), fontWeight: FontWeight.w500)),
+                  ],
+                ),
+                const Row(
+                  children: [
+                    Icon(Icons.fingerprint, size: 15, color: Color(0xFF16a34a)),
+                    SizedBox(width: 4),
+                    Text('Use Face-ID', style: TextStyle(fontSize: 11, color: Color(0xFF16a34a), fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Submit Button
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0f5132),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 4,
+                ),
+                onPressed: _isLoading ? null : _submitLogin,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Sign In to Account', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward_rounded, size: 16),
+                        ],
+                      ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Register Link
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Don\'t have an account?', style: TextStyle(color: Color(0xFF64748b), fontSize: 11)),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
+                  },
+                  child: const Text(
+                    'Register New Role',
+                    style: TextStyle(
+                      color: Color(0xFF0f5132),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
