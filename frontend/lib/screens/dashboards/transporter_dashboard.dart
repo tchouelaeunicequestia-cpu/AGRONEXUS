@@ -1,8 +1,12 @@
 // lib/screens/dashboards/transporter_dashboard.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
 import '../../services/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/platform_services.dart';
 
 class TransporterDashboard extends StatefulWidget {
   const TransporterDashboard({super.key});
@@ -14,11 +18,23 @@ class TransporterDashboard extends StatefulWidget {
 class _TransporterDashboardState extends State<TransporterDashboard> {
   bool _isLoading = true;
   Map<String, dynamic> _metrics = {};
+  PositionData? _livePosition;
 
   @override
   void initState() {
     super.initState();
     _fetchMetrics();
+    _loadLivePosition();
+  }
+
+  Future<void> _loadLivePosition() async {
+    try {
+      final position = await LocationServiceFactory.getService()
+          .getCurrentLocation();
+      if (mounted) setState(() => _livePosition = position);
+    } catch (_) {
+      // The corridor map uses the registered depot coordinate when GPS is unavailable.
+    }
   }
 
   Future<void> _fetchMetrics() async {
@@ -66,15 +82,29 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
                 color: const Color(0xFF003820).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.local_shipping_rounded, color: Color(0xFF003820), size: 20),
+              child: const Icon(
+                Icons.local_shipping_rounded,
+                color: Color(0xFF003820),
+                size: 20,
+              ),
             ),
             const SizedBox(width: 10),
             const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('AgroNexus', style: TextStyle(color: Color(0xFF003820), fontSize: 18, fontWeight: FontWeight.bold)),
-                Text('Freight Mesh', style: TextStyle(color: Color(0xFF404942), fontSize: 11)),
+                Text(
+                  'AgroNexus',
+                  style: TextStyle(
+                    color: Color(0xFF003820),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Freight Mesh',
+                  style: TextStyle(color: Color(0xFF404942), fontSize: 11),
+                ),
               ],
             ),
           ],
@@ -88,9 +118,25 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
             ),
             child: const Row(
               children: [
-                SizedBox(width: 6, height: 6, child: DecoratedBox(decoration: BoxDecoration(color: Color(0xFF006C49), shape: BoxShape.circle))),
+                SizedBox(
+                  width: 6,
+                  height: 6,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Color(0xFF006C49),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
                 SizedBox(width: 6),
-                Text('Transporter / Fleet', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF005236))),
+                Text(
+                  'Transporter / Fleet',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF005236),
+                  ),
+                ),
               ],
             ),
           ),
@@ -103,7 +149,9 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF003820)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF003820)),
+            )
           : RefreshIndicator(
               onRefresh: _fetchMetrics,
               child: SingleChildScrollView(
@@ -117,7 +165,12 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                          ),
+                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,15 +180,44 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
                             children: [
                               const Row(
                                 children: [
-                                  SizedBox(width: 8, height: 8, child: DecoratedBox(decoration: BoxDecoration(color: Color(0xFF006C49), shape: BoxShape.circle))),
+                                  SizedBox(
+                                    width: 8,
+                                    height: 8,
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFF006C49),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
                                   SizedBox(width: 8),
-                                  Text('Freight Mesh v2.6 Active', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF006C49))),
+                                  Text(
+                                    'Freight Mesh v2.6 Active',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF006C49),
+                                    ),
+                                  ),
                                 ],
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(color: const Color(0xFFD6EEDC), borderRadius: BorderRadius.circular(10)),
-                                child: const Text('RTK ±1.8m', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF003820))),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFD6EEDC),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text(
+                                  'RTK ±1.8m',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF003820),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -146,9 +228,22 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(user?.name ?? 'Jean-Baptiste Ndongo', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF003820))),
+                                    Text(
+                                      user?.name ?? 'Jean-Baptiste Ndongo',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w900,
+                                        color: Color(0xFF003820),
+                                      ),
+                                    ),
                                     const SizedBox(height: 2),
-                                    const Text('Isuzu NPR 4.5T Coldbox • CMR-LT-884-AB', style: TextStyle(fontSize: 12, color: Color(0xFF404942))),
+                                    const Text(
+                                      'Isuzu NPR 4.5T Coldbox • CMR-LT-884-AB',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF404942),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -166,18 +261,57 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
                       mainAxisSpacing: 12,
                       childAspectRatio: 1.5,
                       children: [
-                        _buildKpiCard('Escrow Locked', '${_metrics['lockedEscrow'] ?? '100,000 XAF'}', 'Guaranteed Payout', Icons.lock_rounded, const Color(0xFF003820)),
-                        _buildKpiCard('Cold Chain Telemetry', '${_metrics['temp'] ?? '8.2°C'}', '100% Compliant', Icons.ac_unit_rounded, const Color(0xFF006C49)),
-                        _buildKpiCard('Odometer Today', '${_metrics['odometer'] ?? '142 km'}', 'Avg 58 km/h', Icons.speed_rounded, const Color(0xFF404942)),
-                        _buildKpiCard('Dispatched Slots', '${_metrics['jobs'] ?? 2} Jobs', '1 Live • 1 Queued', Icons.inventory_2_rounded, const Color(0xFF003820)),
+                        _buildKpiCard(
+                          'Escrow Locked',
+                          '${_metrics['lockedEscrow'] ?? '100,000 XAF'}',
+                          'Guaranteed Payout',
+                          Icons.lock_rounded,
+                          const Color(0xFF003820),
+                        ),
+                        _buildKpiCard(
+                          'Cold Chain Telemetry',
+                          '${_metrics['temp'] ?? '8.2°C'}',
+                          '100% Compliant',
+                          Icons.ac_unit_rounded,
+                          const Color(0xFF006C49),
+                        ),
+                        _buildKpiCard(
+                          'Odometer Today',
+                          '${_metrics['odometer'] ?? '142 km'}',
+                          'Avg 58 km/h',
+                          Icons.speed_rounded,
+                          const Color(0xFF404942),
+                        ),
+                        _buildKpiCard(
+                          'Dispatched Slots',
+                          '${_metrics['jobs'] ?? 2} Jobs',
+                          '1 Live • 1 Queued',
+                          Icons.inventory_2_rounded,
+                          const Color(0xFF003820),
+                        ),
                       ],
                     ),
+                    const SizedBox(height: 20),
+                    _buildCorridorMap(),
                     const SizedBox(height: 20),
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Active Corridor Missions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF003820))),
-                        Text('FR4.1 & FR4.2 Protocol', style: TextStyle(fontSize: 11, color: Color(0xFF404942))),
+                        Text(
+                          'Active Corridor Missions',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF003820),
+                          ),
+                        ),
+                        Text(
+                          'FR4.1 & FR4.2 Protocol',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF404942),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -186,7 +320,12 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                          ),
+                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,33 +334,78 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(color: const Color(0xFF6CF8BB), borderRadius: BorderRadius.circular(10)),
-                                child: const Text('IN TRANSIT #ORD-2026-A89F', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF002113))),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF6CF8BB),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text(
+                                  'IN TRANSIT #ORD-2026-A89F',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF002113),
+                                  ),
+                                ),
                               ),
                               const Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text('35,000 XAF', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF003820))),
-                                  Text('15% Escrow Release', style: TextStyle(fontSize: 10, color: Color(0xFF006C49))),
+                                  Text(
+                                    '35,000 XAF',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF003820),
+                                    ),
+                                  ),
+                                  Text(
+                                    '15% Escrow Release',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Color(0xFF006C49),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
                           ),
                           const SizedBox(height: 10),
-                          const Text('Organic Giant Plantain', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF003820))),
-                          const Text('3,500 kg • 70 Standardized Cold Crates', style: TextStyle(fontSize: 12, color: Color(0xFF404942))),
+                          const Text(
+                            'Organic Giant Plantain',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF003820),
+                            ),
+                          ),
+                          const Text(
+                            '3,500 kg • 70 Standardized Cold Crates',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF404942),
+                            ),
+                          ),
                           const SizedBox(height: 16),
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF003820),
                               foregroundColor: Colors.white,
                               minimumSize: const Size(double.infinity, 44),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
-                            onPressed: () => _showCustomSnackBar('Waypoint #3 Logged: PK84 +3.854°N, 11.512°E'),
+                            onPressed: () => _showCustomSnackBar(
+                              'Waypoint #3 Logged: PK84 +3.854°N, 11.512°E',
+                            ),
                             icon: const Icon(Icons.add_location_alt_rounded),
-                            label: const Text('Submit Geotagged Waypoint', style: TextStyle(fontWeight: FontWeight.bold)),
+                            label: const Text(
+                              'Submit Geotagged Waypoint',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ],
                       ),
@@ -234,13 +418,172 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
     );
   }
 
-  Widget _buildKpiCard(String title, String value, String subtitle, IconData icon, Color color) {
+  Widget _buildCorridorMap() {
+    const depot = LatLng(4.0511, 9.7679);
+    const hub = LatLng(3.8480, 11.5021);
+    final livePoint = _livePosition == null
+        ? null
+        : LatLng(_livePosition!.latitude, _livePosition!.longitude);
+    final route = [depot, ?livePoint, hub];
+
+    return Container(
+      height: 300,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          FlutterMap(
+            options: const MapOptions(
+              initialCenter: LatLng(3.95, 10.55),
+              initialZoom: 6.6,
+              interactionOptions: InteractionOptions(
+                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+              ),
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.example.frontend',
+              ),
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: route,
+                    strokeWidth: 5,
+                    color: const Color(0xFF006C49),
+                  ),
+                ],
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: depot,
+                    width: 42,
+                    height: 42,
+                    child: const Icon(
+                      Icons.warehouse_rounded,
+                      color: Color(0xFF003820),
+                      size: 30,
+                    ),
+                  ),
+                  if (livePoint != null)
+                    Marker(
+                      point: livePoint,
+                      width: 48,
+                      height: 48,
+                      child: const Icon(
+                        Icons.local_shipping_rounded,
+                        color: Color(0xFFBA1A1A),
+                        size: 32,
+                      ),
+                    ),
+                  Marker(
+                    point: hub,
+                    width: 42,
+                    height: 42,
+                    child: const Icon(
+                      Icons.location_on_rounded,
+                      color: Color(0xFF006C49),
+                      size: 32,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Positioned(
+            top: 12,
+            left: 12,
+            right: 12,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.94),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    'Live Corridor Tracking',
+                    style: TextStyle(
+                      color: Color(0xFF003820),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.94),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    _livePosition == null ? 'Depot GPS fallback' : 'GPS live',
+                    style: TextStyle(
+                      color: _livePosition == null
+                          ? const Color(0xFF64748B)
+                          : const Color(0xFF006C49),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Positioned(
+            bottom: 12,
+            left: 12,
+            child: _MapLegend(
+              icon: Icons.warehouse_rounded,
+              label: 'Farmer depot',
+            ),
+          ),
+          const Positioned(
+            bottom: 12,
+            right: 12,
+            child: _MapLegend(
+              icon: Icons.location_on_rounded,
+              label: 'Buyer hub',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKpiCard(
+    String title,
+    String value,
+    String subtitle,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,18 +593,76 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Icon(icon, color: color, size: 18),
-              const Icon(Icons.trending_up_rounded, color: Color(0xFF16a34a), size: 14),
+              const Icon(
+                Icons.trending_up_rounded,
+                color: Color(0xFF16a34a),
+                size: 14,
+              ),
             ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontSize: 10, color: Color(0xFF404942), fontWeight: FontWeight.w500), maxLines: 1),
-              Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
-              Text(subtitle, style: const TextStyle(fontSize: 9, color: Color(0xFF64748B)), maxLines: 1),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF404942),
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: const TextStyle(fontSize: 9, color: Color(0xFF64748B)),
+                maxLines: 1,
+              ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MapLegend extends StatelessWidget {
+  const _MapLegend({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: const Color(0xFF003820)),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF003820),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

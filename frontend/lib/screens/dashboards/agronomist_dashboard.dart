@@ -1,4 +1,6 @@
 // lib/screens/dashboards/agronomist_dashboard.dart
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -17,11 +19,35 @@ class _AgronomistDashboardState extends State<AgronomistDashboard> {
   bool _isBroadcasting = false;
   bool _isFanActive = false;
   Map<String, dynamic> _metrics = {};
+  StreamSubscription<Map<String, dynamic>>? _alertSubscription;
+  Map<String, dynamic>? _liveAlert;
 
   @override
   void initState() {
     super.initState();
     _fetchMetrics();
+    _subscribeToTelemetryAlerts();
+  }
+
+  void _subscribeToTelemetryAlerts() {
+    _alertSubscription = ApiService.telemetryAlertStream().listen(
+      (alert) {
+        if (!mounted) return;
+        setState(() => _liveAlert = alert);
+        _showCustomSnackBar(
+          'Critical telemetry alert from ${alert['nodeId'] ?? 'silo node'}',
+        );
+      },
+      onError: (_) {
+        // The static advisory queue remains available if the stream is offline.
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _alertSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchMetrics() async {
@@ -300,6 +326,8 @@ class _AgronomistDashboardState extends State<AgronomistDashboard> {
                       ],
                     ),
                     const SizedBox(height: 12),
+                    if (_liveAlert != null) _buildLiveAlertCard(_liveAlert!),
+                    if (_liveAlert != null) const SizedBox(height: 12),
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -536,6 +564,69 @@ class _AgronomistDashboardState extends State<AgronomistDashboard> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildLiveAlertCard(Map<String, dynamic> alert) {
+    final nodeId = alert['nodeId']?.toString() ?? 'Unknown node';
+    final humidity = alert['humidity']?.toString() ?? '--';
+    final temperature = alert['temperature']?.toString() ?? '--';
+    final gas = alert['gasLevel']?.toString() ?? '--';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF4F2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFB4AB)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: Color(0xFFBA1A1A),
+            size: 28,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'LIVE TELEMETRY BREACH',
+                  style: TextStyle(
+                    color: Color(0xFFBA1A1A),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$nodeId • RH $humidity% • $temperature°C • Gas $gas',
+                  style: const TextStyle(
+                    color: Color(0xFF003820),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  alert['alertMessage']?.toString() ??
+                      'Environmental parameters exceed the safe threshold.',
+                  style: const TextStyle(
+                    color: Color(0xFF404942),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Dismiss live alert',
+            onPressed: () => setState(() => _liveAlert = null),
+            icon: const Icon(Icons.close, color: Color(0xFFBA1A1A)),
+          ),
+        ],
+      ),
     );
   }
 

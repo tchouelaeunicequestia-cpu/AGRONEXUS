@@ -67,7 +67,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             // Step 4: Extract email and role from token claims
             String email = jwtService.extractEmail(rawToken);
-            String role  = jwtService.extractRole(rawToken);
 
             // Step 5: Only set authentication if SecurityContext is not already populated
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -78,7 +77,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     // Build Spring Security authority from the user's RBAC role
                     // Convention: ROLE_FARMER, ROLE_BUYER, ROLE_ADMIN, etc.
                     List<SimpleGrantedAuthority> authorities = List.of(
-                            new SimpleGrantedAuthority("ROLE_" + role)
+                            new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
                     );
 
                     // Create authentication token and set it in the SecurityContext

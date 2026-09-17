@@ -44,7 +44,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       if (userResponse.statusCode != 200 || metricsResponse.statusCode != 200) {
         throw StateError(
           'Unable to load admin data '
-          '(pending users: ${userResponse.statusCode}, '
+          '(users: ${userResponse.statusCode}, '
           'metrics: ${metricsResponse.statusCode}).',
         );
       }
@@ -118,27 +118,93 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
     final user = auth.currentUser;
+    final pendingCount = _users
+        .where((account) => account['isVerified'] == false)
+        .length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFE9FFED),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text(
-          'AgroNexus Enterprise Admin',
-          style: TextStyle(
-            color: Color(0xFF003820),
-            fontWeight: FontWeight.bold,
-          ),
+        backgroundColor: Colors.white.withValues(alpha: 0.85),
+        elevation: 0,
+        toolbarHeight: 64,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF003820).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.admin_panel_settings_rounded,
+                color: Color(0xFF003820),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'AgroNexus',
+                  style: TextStyle(
+                    color: Color(0xFF003820),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Command Center',
+                  style: TextStyle(color: Color(0xFF404942), fontSize: 11),
+                ),
+              ],
+            ),
+          ],
         ),
         actions: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD6EEDC),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Row(
+              children: [
+                SizedBox(
+                  width: 6,
+                  height: 6,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Color(0xFF006C49),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 6),
+                Text(
+                  'Admin / Control',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF005236),
+                  ),
+                ),
+              ],
+            ),
+          ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF003820)),
+            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF003820)),
             onPressed: _fetchAdminData,
+            tooltip: 'Refresh data',
           ),
           IconButton(
-            icon: const Icon(Icons.logout, color: Color(0xFF003820)),
+            icon: const Icon(Icons.logout_rounded, color: Color(0xFF003820)),
             onPressed: () => auth.logout(),
+            tooltip: 'Sign out',
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: _isLoading
@@ -153,27 +219,79 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 10,
+                        ),
+                      ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          'Superuser: ${user?.name ?? 'Admin'}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF003820),
+                        CircleAvatar(
+                          radius: 26,
+                          backgroundColor: const Color(0xFF003820),
+                          child: Text(
+                            (user?.name?.isNotEmpty ?? false)
+                                ? user!.name!.substring(0, 1).toUpperCase()
+                                : 'A',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
                           ),
                         ),
-                        const Text(
-                          'CEMAC/BEAC Vault Live • System Mesh Active',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF404942),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user?.name ?? 'System Administrator',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF003820),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Operations, trust & compliance control plane',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF404942),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Row(
+                                children: [
+                                  SizedBox(
+                                    width: 7,
+                                    height: 7,
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFF006C49),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'System mesh active',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF006C49),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -193,7 +311,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       Expanded(
                         child: _buildMetricCard(
                           'Vetting Queue',
-                          '${_users.where((u) => u['isVerified'] == false).length} Accounts',
+                          '$pendingCount accounts',
                           Colors.orange,
                         ),
                       ),
@@ -234,64 +352,61 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     Colors.red,
                   ),
                   const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Account Verification',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF003820),
+                        ),
+                      ),
+                      Text(
+                        '$pendingCount pending',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFB45309),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
                   const Text(
-                    'Account Verification Management',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF003820),
-                    ),
+                    'Review network access and manage account trust status.',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                   ),
                   const SizedBox(height: 10),
-                  _users.isEmpty
-                      ? Container(
-                          padding: const EdgeInsets.all(20),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
+                  if (_users.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Column(
+                        children: [
+                          Icon(
+                            Icons.verified_user_outlined,
+                            size: 36,
+                            color: Color(0xFF006C49),
                           ),
-                          child: const Text(
-                            'No pending accounts awaiting verification.',
-                            style: TextStyle(color: Color(0xFF64748B)),
+                          SizedBox(height: 8),
+                          Text(
+                            'All accounts are up to date.',
+                            style: TextStyle(
+                              color: Color(0xFF404942),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        )
-                      : Column(
-                          children: _users.map((p) {
-                            final isVerified = p['isVerified'] == true;
-                            final isAdmin = p['role'] == 'ADMIN';
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 10),
-                              child: ListTile(
-                                title: Text(
-                                  '${p['fullName']} (${p['role']})',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                subtitle: Text('Email: ${p['email']}'),
-                                trailing: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: isVerified
-                                        ? Colors.orange
-                                        : const Color(0xFF16a34a),
-                                  ),
-                                  onPressed: isAdmin && isVerified
-                                      ? null
-                                      : () => _setUserVerification(
-                                          p['id'],
-                                          p['fullName'],
-                                          !isVerified,
-                                        ),
-                                  child: Text(
-                                    isVerified ? 'De-approve' : 'Approve',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
+                        ],
+                      ),
+                    )
+                  else
+                    ..._users.map(_buildUserCard),
                 ],
               ),
             ),
@@ -352,6 +467,83 @@ class _AdminDashboardState extends State<AdminDashboard> {
               fontWeight: FontWeight.bold,
               color: color,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserCard(dynamic account) {
+    final isVerified = account['isVerified'] == true;
+    final isAdmin = account['role'] == 'ADMIN';
+    final name = account['fullName']?.toString() ?? 'Unknown account';
+    final role = account['role']?.toString() ?? 'USER';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isVerified ? const Color(0xFFD6EEDC) : const Color(0xFFFDE68A),
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: isVerified
+                ? const Color(0xFFD6EEDC)
+                : const Color(0xFFFEF3C7),
+            child: Text(
+              name.substring(0, 1).toUpperCase(),
+              style: const TextStyle(
+                color: Color(0xFF003820),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF003820),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${account['email']} • $role',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF64748B),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            onPressed: isAdmin && isVerified
+                ? null
+                : () => _setUserVerification(account['id'], name, !isVerified),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: isVerified
+                  ? const Color(0xFFB45309)
+                  : const Color(0xFF006C49),
+              side: BorderSide(
+                color: isVerified
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0xFF006C49),
+              ),
+            ),
+            child: Text(isVerified ? 'De-approve' : 'Approve'),
           ),
         ],
       ),
