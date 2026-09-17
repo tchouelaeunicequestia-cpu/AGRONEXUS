@@ -103,6 +103,17 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         globalAccessToken = data['accessToken'];
+        await _storage.saveSession(
+          accessToken: data['accessToken']?.toString() ?? '',
+          refreshToken: data['refreshToken']?.toString() ??
+              await _storage.getRefreshToken() ?? '',
+          role: await _storage.getUserRole() ?? 'BUYER',
+          userId: await _storage.getUserId(),
+          name: await _storage.getUserName(),
+          email: await _storage.getUserEmail(),
+        );
+        globalRefreshToken = data['refreshToken']?.toString() ??
+            await _storage.getRefreshToken();
         return true;
       }
     } catch (_) {}

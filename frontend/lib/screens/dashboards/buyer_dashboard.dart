@@ -39,7 +39,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
     {'name': 'Cocoa & Coffee', 'value': 'COCOA', 'icon': Icons.coffee_rounded, 'color': const Color(0xFF78350F)},
   ];
 
-  // Showcase fallback harvest lots matching the high-fidelity HTML design specification
+  // Kept as design reference; only records returned by the backend are displayed.
+  // Retained as design reference; production cards use backend results only.
+  // ignore: unused_field
   final List<Map<String, dynamic>> _sampleHarvestLots = [
     {
       'id': 101,
@@ -180,7 +182,7 @@ class _BuyerDashboardState extends State<BuyerDashboard>
         });
       }
     } catch (_) {
-      // Graceful fallback to rich static dataset if backend is unreachable
+      // Keep the current backend result empty when the marketplace is unavailable.
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -209,16 +211,6 @@ class _BuyerDashboardState extends State<BuyerDashboard>
         'spec2': 'Escrow Lock Ready',
         'imageUrl': p['imageUrl'] ?? 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=800&auto=format&fit=crop',
       });
-    }
-
-    if (combined.isEmpty) {
-      combined.addAll(_sampleHarvestLots);
-    } else {
-      for (var s in _sampleHarvestLots) {
-        if (!combined.any((item) => item['title'] == s['title'])) {
-          combined.add(s);
-        }
-      }
     }
 
     if (_selectedCategory != 'All') {
@@ -476,6 +468,11 @@ class _BuyerDashboardState extends State<BuyerDashboard>
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
+    final user = auth.currentUser;
+    final displayName = user?.name ?? 'Buyer';
+    final initials = displayName.trim().isEmpty
+        ? 'B'
+        : displayName.trim().substring(0, 1).toUpperCase();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -632,13 +629,16 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                               width: 2,
                             ),
                           ),
-                          child: const CircleAvatar(
+                          child: CircleAvatar(
                             radius: 14,
-                            backgroundColor: Color(0xFF0F5132),
-                            child: Icon(
-                              Icons.person_rounded,
-                              color: Colors.white,
-                              size: 16,
+                            backgroundColor: const Color(0xFF0F5132),
+                            child: Text(
+                              initials,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),

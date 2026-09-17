@@ -6,13 +6,13 @@ import com.agronexus.api.entity.User;
 import com.agronexus.api.repository.OrderRepository;
 import com.agronexus.api.repository.ProductRepository;
 import com.agronexus.api.repository.TelemetryLogRepository;
-import com.agronexus.api.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -22,16 +22,12 @@ public class FarmerDashboardController {
     private final ProductRepository productRepository;
     private final TelemetryLogRepository telemetryLogRepository;
     private final OrderRepository orderRepository;
-    private final UserRepository userRepository;
-
     public FarmerDashboardController(ProductRepository productRepository, 
                                      TelemetryLogRepository telemetryLogRepository,
-                                     OrderRepository orderRepository,
-                                     UserRepository userRepository) {
+                                     OrderRepository orderRepository) {
         this.productRepository = productRepository;
         this.telemetryLogRepository = telemetryLogRepository;
         this.orderRepository = orderRepository;
-        this.userRepository = userRepository;
     }
 
     // GET /api/v1/farmers/{farmerId}/dashboard
@@ -64,14 +60,14 @@ public class FarmerDashboardController {
                 .map(order -> order.getTotalEscrowAmount().doubleValue())
                 .reduce(0.0, Double::sum);
 
-        return ResponseEntity.ok(Map.of(
-            "escrowBalance", escrowBalance,
-            "activeLotsCount", products.size(),
-            "totalYieldKg", totalYield,
-            "siloTemp", telemetry == null ? null : telemetry.getTemperature(),
-            "siloHumidity", telemetry == null ? null : telemetry.getHumidity(),
-            "siloGas", telemetry == null ? null : telemetry.getGasLevel(),
-            "telemetryAvailable", telemetry != null
-        ));
+        Map<String, Object> dashboard = new HashMap<>();
+        dashboard.put("escrowBalance", escrowBalance);
+        dashboard.put("activeLotsCount", products.size());
+        dashboard.put("totalYieldKg", totalYield);
+        dashboard.put("siloTemp", telemetry == null ? null : telemetry.getTemperature());
+        dashboard.put("siloHumidity", telemetry == null ? null : telemetry.getHumidity());
+        dashboard.put("siloGas", telemetry == null ? null : telemetry.getGasLevel());
+        dashboard.put("telemetryAvailable", telemetry != null);
+        return ResponseEntity.ok(dashboard);
     }
 }

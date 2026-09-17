@@ -84,6 +84,12 @@ class RoleDashboardPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
+    final user = auth.currentUser;
+    final displayName = user?.name ?? 'User';
+    final email = user?.email ?? 'No email available';
+    final initials = displayName.trim().isEmpty
+        ? '?'
+        : displayName.trim().substring(0, 1).toUpperCase();
     return Scaffold(
       backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
@@ -136,7 +142,14 @@ class RoleDashboardPlaceholder extends StatelessWidget {
                     color: accentColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, size: 40, color: accentColor),
+                  child: Text(
+                    initials,
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: accentColor,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -150,7 +163,7 @@ class RoleDashboardPlaceholder extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Authenticated RBAC Role: ${auth.role}',
+                  '$displayName\n$email\nAuthenticated RBAC Role: ${auth.role}',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppTheme.mutedGrey,
@@ -165,14 +178,14 @@ class RoleDashboardPlaceholder extends StatelessWidget {
                     color: AppTheme.backgroundLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.verified_user_rounded, color: AppTheme.successGreen, size: 20),
-                      SizedBox(width: 10),
+                      const Icon(Icons.verified_user_rounded, color: AppTheme.successGreen, size: 20),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'JWT Token & Escrow RBAC Authorized',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryEmerald),
+                          _roleMessage(auth.role),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryEmerald),
                         ),
                       ),
                     ],
@@ -184,5 +197,18 @@ class RoleDashboardPlaceholder extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _roleMessage(String? role) {
+    switch (role) {
+      case 'TRANSPORTER':
+        return 'Your transporter profile is active. Assigned delivery jobs will appear here.';
+      case 'AGRONOMIST':
+        return 'Your agronomist profile is active. Advisory requests will appear here.';
+      case 'ADMIN':
+        return 'Your administrator profile is active. Approvals and platform alerts will appear here.';
+      default:
+        return 'Your authenticated AgroNexus profile is active.';
+    }
   }
 }

@@ -393,7 +393,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                         ),
                         const SizedBox(height: 28),
 
-                        const Row(
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
@@ -465,7 +465,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
           const Text('TOTAL ESCROW RECEIVABLE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF404942))),
           const SizedBox(height: 12),
           Text(
-            '${_dashboardData['escrowBalance']} XAF',
+            '${_dashboardData['escrowBalance'] ?? 0} XAF',
             style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFF003820)),
           ),
           const SizedBox(height: 6),
@@ -491,11 +491,11 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
           const Text('HARVEST BATCHES', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF404942))),
           const SizedBox(height: 12),
           Text(
-            '${_dashboardData['activeLotsCount']} Active Lots',
+            '${_dashboardData['activeLotsCount'] ?? 0} Active Lots',
             style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFF003820)),
           ),
           const SizedBox(height: 6),
-          Text('${_dashboardData['totalYieldKg']} kg total yield available', style: const TextStyle(fontSize: 12, color: Color(0xFF16a34a), fontWeight: FontWeight.w600)),
+          Text('${_dashboardData['totalYieldKg'] ?? 0} kg total yield available', style: const TextStyle(fontSize: 12, color: Color(0xFF16a34a), fontWeight: FontWeight.w600)),
           const SizedBox(height: 16),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
@@ -520,13 +520,25 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
           const Text('IOT SILO HEALTH', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF404942))),
           const SizedBox(height: 12),
           Text(
-            '${_dashboardData['siloTemp']}°C',
+            _dashboardData['siloTemp'] == null
+                ? 'No data'
+                : '${_dashboardData['siloTemp']}°C',
             style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFF003820)),
           ),
           const SizedBox(height: 6),
-          const Text('Live ESP32 • Optimal Microclimate', style: TextStyle(fontSize: 12, color: Color(0xFF16a34a), fontWeight: FontWeight.w600)),
+          Text(
+            _dashboardData['telemetryAvailable'] == true
+                ? 'Live ESP32 telemetry'
+                : 'No telemetry received yet',
+            style: const TextStyle(fontSize: 12, color: Color(0xFF16a34a), fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 16),
-          const Text('Node #01 • RH 64% • MQ-135 Clear', style: TextStyle(fontSize: 11, color: Color(0xFF64748b))),
+          Text(
+            _dashboardData['siloHumidity'] == null
+                ? 'Connect a storage node to see readings'
+                : 'Latest RH: ${_dashboardData['siloHumidity']}% • Gas: ${_dashboardData['siloGas']}',
+            style: const TextStyle(fontSize: 11, color: Color(0xFF64748b)),
+          ),
         ],
       ),
     );

@@ -275,19 +275,17 @@ class _AddProduceScreenState extends State<AddProduceScreen>
       } else {
         if (mounted) {
           _showSnackBar(
-            'Batch Published to AgroNexus Network!',
-            isError: false,
+            'Unable to publish batch (HTTP ${response.statusCode}).',
+            isError: true,
           );
-          Navigator.pop(context);
         }
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         _showSnackBar(
-          'Harvest Batch Published Successfully to AgroNexus Network!',
-          isError: false,
+          'Unable to publish batch: ${e.toString().replaceFirst('Exception: ', '')}',
+          isError: true,
         );
-        Navigator.pop(context);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

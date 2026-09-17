@@ -1,0 +1,308 @@
+I’ll trace the current role dashboards and backend APIs, then wire the screens to authenticated user data instead of placeholders or hard-coded values. I’ll preserve the existing UI and implement the smallest complete end-to-end changes needed for farmer and the other roles.
+
+Ran terminal command: git --no-pager status --short
+
+Find files matching `frontend/lib/**/*.dart`
+
+Find files matching `backend/src/main/java/**/*.java`
+
+Search for `(?i)static|placeholder|fallback|my-listings|profile|telemetry|orders|dashboar...`
+
+Read 
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\backend\\src\\main\\java\\com\\agronexus\\api\\controller\\FarmerDashboardController.java"
+}
+
+Read , lines 1 to 280
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\services\\api_service.dart",
+  "view_range": [
+    1,
+    280
+  ]
+}
+
+Read 
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\services\\auth_provider.dart"
+}
+
+Read 
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\services\\secure_storage_service.dart"
+}
+
+Read , lines 1 to 180
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\screens\\dashboards\\farmer_dashboard.dart",
+  "view_range": [
+    1,
+    180
+  ]
+}
+
+Read , lines 1 to 240
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\screens\\dashboards\\buyer_dashboard.dart",
+  "view_range": [
+    1,
+    240
+  ]
+}
+
+Read , lines 1 to 180
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\screens\\produce\\add_produce_screen.dart",
+  "view_range": [
+    1,
+    180
+  ]
+}
+
+The current code confirms the issue: farmer metrics still contain placeholder values, the buyer dashboard always appends sample produce, and authenticated identity is not consistently restored after relaunch. I’ll now fix those data paths and replace role placeholders with user-specific dashboard content where the backend supports it.
+
+Read 
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\backend\\src\\main\\java\\com\\agronexus\\api\\entity\\User.java"
+}
+
+Read 
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\backend\\src\\main\\java\\com\\agronexus\\api\\entity\\Product.java"
+}
+
+Read 
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\backend\\src\\main\\java\\com\\agronexus\\api\\entity\\TelemetryLog.java"
+}
+
+Read 
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\backend\\src\\main\\java\\com\\agronexus\\api\\repository\\ProductRepository.java"
+}
+
+Read 
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\backend\\src\\main\\java\\com\\agronexus\\api\\repository\\OrderRepository.java"
+}
+
+Read 
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\backend\\src\\main\\java\\com\\agronexus\\api\\repository\\TelemetryLogRepository.java"
+}
+
+Search for `authenticatedRequest\(`
+
+Read , lines 180 to 520
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\screens\\produce\\add_produce_screen.dart",
+  "view_range": [
+    180,
+    520
+  ]
+}
+
+Read , lines 180 to 560
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\screens\\dashboards\\farmer_dashboard.dart",
+  "view_range": [
+    180,
+    560
+  ]
+}
+
+Read 
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\backend\\src\\main\\java\\com\\agronexus\\api\\repository\\UserRepository.java"
+}
+
+Read 
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\backend\\src\\main\\java\\com\\agronexus\\api\\security\\JwtAuthFilter.java"
+}
+
+Edit , , , 
+
+Edit 
+
+Edit 
+
+Read , lines 430 to 550
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\screens\\dashboards\\farmer_dashboard.dart",
+  "view_range": [
+    430,
+    550
+  ]
+}
+
+Read , lines 360 to 445
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\screens\\dashboards\\farmer_dashboard.dart",
+  "view_range": [
+    360,
+    445
+  ]
+}
+
+"Apply Patch" failed
+Completed with input: "*** Begin Patch\n*** Update File: C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\screens\\dashboards\\farmer_dashboard.dart\n@@\n   bool _isLoading = true;\n-  Map<String, dynamic> _dashboardData = {\n-    'escrowBalance': 482500,\n-    'activeLotsCount': 3,\n-    'totalYieldKg': 3500.0,\n-    'siloTemp': 21.4,\n-    'siloHumidity': 64.0,\n-    'siloGas': 'Optimal',\n-  };\n+  Map<String, dynamic> _dashboardData = {};\n+  List<Map<String, dynamic>> _products = [];\n@@\n       final data = await ApiService.getFarmerDashboardMetrics();\n+      final products = await ApiService.getFarmerProducts();\n@@\n           _dashboardData = data;\n+          _products = products;\n@@\n-                            const Text(\n-                              '3 Commodities',\n-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF16a34a)),\n+                            Text(\n+                              '${_products.length} Commodities',\n+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF16a34a)),\n@@\n-                            children: [\n-                              _buildHarvestLotItem('Grade-1 Arabica Coffee', '1,200 Kg Available', '1,850 XAF / Kg', 'Verified Secure'),\n-                              const Divider(height: 24),\n-                              _buildHarvestLotItem('Premium Cocoa Beans', '1,500 Kg Available', '2,100 XAF / Kg', 'Escrow Locked'),\n-                              const Divider(height: 24),\n-                              _buildHarvestLotItem('Organic Plantain Bunch', '800 Kg Available', '450 XAF / Kg', 'Active Match'),\n-                            ],\n+                            children: _products.isEmpty\n+                                ? [\n+                                    const Padding(\n+                                      padding: EdgeInsets.all(16),\n+                                      child: Text(\n+                                        'You have not published any produce yet.',\n+                                        style: TextStyle(color: Color(0xFF64748B)),\n+                                      ),\n+                                    ),\n+                                  ]\n+                                : [\n+                                    for (var i = 0; i < _products.length; i++) ...[\n+                                      _buildHarvestLotItem(\n+                                        _products[i]['title']?.toString() ?? 'Produce lot',\n+                                        '${_products[i]['availableQuantity'] ?? 0} ${_products[i]['unitType'] ?? 'kg'} Available',\n+                                        '${_products[i]['pricePerUnit'] ?? 0} XAF / ${_products[i]['unitType'] ?? 'kg'}',\n+                                        _products[i]['isActive'] == false ? 'Inactive' : 'Active',\n+                                      ),\n+                                      if (i < _products.length - 1) const Divider(height: 24),\n+                                    ],\n+                                  ],\n@@\n-            '${_dashboardData['escrowBalance']} XAF',\n+            '${_dashboardData['escrowBalance'] ?? 0} XAF',\n@@\n-            '${_dashboardData['activeLotsCount']} Active Lots',\n+            '${_dashboardData['activeLotsCount'] ?? 0} Active Lots',\n@@\n-          Text('${_dashboardData['totalYieldKg']} kg total yield available', style: const TextStyle(fontSize: 12, color: Color(0xFF16a34a), fontWeight: FontWeight.w600)),\n+          Text('${_dashboardData['totalYieldKg'] ?? 0} kg total yield available', style: const TextStyle(fontSize: 12, color: Color(0xFF16a34a), fontWeight: FontWeight.w600)),\n@@\n-            '${_dashboardData['siloTemp']}°C',\n+            _dashboardData['siloTemp'] == null\n+                ? 'No data'\n+                : '${_dashboardData['siloTemp']}°C',\n@@\n-          const Text('Live ESP32 • Optimal Microclimate', style: TextStyle(fontSize: 12, color: Color(0xFF16a34a), fontWeight: FontWeight.w600)),\n+          Text(\n+            _dashboardData['telemetryAvailable'] == true\n+                ? 'Live ESP32 telemetry'\n+                : 'No telemetry received yet',\n+            style: const TextStyle(fontSize: 12, color: Color(0xFF16a34a), fontWeight: FontWeight.w600),\n+          ),\n@@\n-          const Text('Node #01 • RH 64% • MQ-135 Clear', style: TextStyle(fontSize: 11, color: Color(0xFF64748b))),\n+          Text(\n+            _dashboardData['siloHumidity'] == null\n+                ? 'Connect a storage node to see readings'\n+                : 'Latest RH: ${_dashboardData['siloHumidity']}% • Gas: ${_dashboardData['siloGas']}',\n+            style: const TextStyle(fontSize: 11, color: Color(0xFF64748b)),\n+          ),\n*** End Patch\n"
+
+Search for `3 Commodities|Grade-1 Arabica|_dashboardData =|siloTemp|totalYieldKg`
+
+Search for `_sampleHarvestLots|if \(combined\.isEmpty\)|combined\.addAll|_displayLots`
+
+Edit 
+
+Edit 
+
+Edit 
+
+Edit 
+
+"Apply Patch" failed
+Completed with input: "*** Begin Patch\n*** Update File: C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\main.dart\n@@\n   Widget build(BuildContext context) {\n     final auth = Provider.of<AuthProvider>(context, listen: false);\n+    final user = auth.currentUser;\n+    final displayName = user?.name ?? 'User';\n+    final email = user?.email ?? 'No email available';\n+    final initials = displayName.trim().isEmpty\n+        ? '?'\n+        : displayName.trim().substring(0, 1).toUpperCase();\n     return Scaffold(\n@@\n                 Container(\n@@\n-                  child: Icon(icon, size: 40, color: accentColor),\n+                  child: CircleAvatar(\n+                    backgroundColor: accentColor.withValues(alpha: 0.15),\n+                    child: Text(\n+                      initials,\n+                      style: TextStyle(\n+                        color: accentColor,\n+                        fontSize: 28,\n+                        fontWeight: FontWeight.bold,\n+                      ),\n+                    ),\n+                  ),\n@@\n                 Text(\n                   roleTitle,\n@@\n                 const SizedBox(height: 8),\n                 Text(\n-                  'Authenticated RBAC Role: ${auth.role}',\n+                  '$displayName\\n$email\\nAuthenticated RBAC Role: ${auth.role}',\n@@\n                 const SizedBox(height: 24),\n                 Container(\n@@\n-                      const Text(\n-                        'JWT Token & Escrow RBAC Authorized',\n+                      Text(\n+                        _roleMessage(auth.role),\n@@\n   }\n+\n+  String _roleMessage(String? role) {\n+    switch (role) {\n+      case 'TRANSPORTER':\n+        return 'Your transporter profile is active. Delivery jobs assigned to this account will appear here.';\n+      case 'AGRONOMIST':\n+        return 'Your agronomist profile is active. Advisory requests assigned to this account will appear here.';\n+      case 'ADMIN':\n+        return 'Your administrator profile is active. Pending approvals and platform alerts will appear here.';\n+      default:\n+        return 'Your authenticated AgroNexus profile is active.';\n+    }\n+  }\n }\n*** End Patch\n"
+
+Read , lines 75 to 180
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\main.dart",
+  "view_range": [
+    75,
+    180
+  ]
+}
+
+Read , lines 180 to 220
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\main.dart",
+  "view_range": [
+    180,
+    220
+  ]
+}
+
+Edit 
+
+Edit 
+
+The dynamic wiring is now in place: farmer metrics and listings come from authenticated backend data, buyer results no longer mix in demo harvests, and relaunch restores the logged-in identity. I’m validating Dart and Java compilation next and will correct any integration errors.
+
+Ran terminal command: Set-Location 'C:\Users\lenovo p14s\Music\AGRONEXUS\frontend'; flutter analyze lib\main.dart lib\services\api_service.dart lib\services\auth_provider.dart lib\screens\dashboards\farmer_dashboard.dart lib\screens\dashboards\buyer_dashboard.dart lib\screens\produce\add_produce_screen.dart
+
+Ran terminal command: Get-Command java -ErrorAction SilentlyContinue; Get-ChildItem 'C:\Program Files\Java' -ErrorAction SilentlyContinue; Get-ChildItem 'C:\Program Files\Eclipse Adoptium' -ErrorAction SilentlyContinue
+
+Checked , , , , , 2 problems found
+
+Read , lines 35 to 195
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\screens\\dashboards\\buyer_dashboard.dart",
+  "view_range": [
+    35,
+    195
+  ]
+}
+
+"Apply Patch" failed
+Completed with input: "*** Begin Patch\n*** Update File: C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\screens\\dashboards\\buyer_dashboard.dart\n@@\n-  // Showcase fallback harvest lots matching the high-fidelity HTML design specification\n-  final List<Map<String, dynamic>> _sampleHarvestLots = [\n-    {\n-      'id': 101,\n-      'title': 'Organic Giant Plantain',\n-      'scientificName': 'Musa paradisiaca',\n-      'farmerName': 'Jean-Paul Kamga',\n-      'locationAxis': 'Bafia Depot Axis',\n-      'category': 'PLANTAINS',\n-      'pricePerUnit': 450,\n-      'unitType': 'kg',\n-      'availableQuantity': 3500.0,\n-      'inventoryPercent': 0.70,\n-      'distanceKm': 18.4,\n-      'gradeBadge': 'Grade A+ Export',\n-      'telemetryInfo': 'ESP32 Node #4 · Silo 14.2°C Safe Microclimate',\n-      'timeAgo': 'Cut 4h ago',\n-      'spec1': 'Direct Depot Pickup',\n-      'spec2': 'PostGIS Escrow Lock',\n-      'imageUrl':\n-          'https://images.unsplash.com/photo-1528825871115-3581a5387919?q=80&w=800&auto=format&fit=crop',\n-    },\n-    {\n-      'id': 102,\n-      'title': 'Red Roma Tomatoes',\n-      'scientificName': 'Lycopersicon',\n-      'locationAxis': 'Direct Pickup or Freight',\n-      'category': 'VEGETABLES',\n-      'pricePerUnit': 600,\n-      'unitType': 'crate',\n-      'availableQuantity': 120.0,\n-      'inventoryPercent': 0.45,\n-      'distanceKm': 7.2,\n-      'gradeBadge': 'ESP32 Telemetry',\n-      'telemetryInfo': 'Obala Hydro-Farms · 18.2°C & 82% RH in Silo',\n-      'timeAgo': 'Grade AA',\n-      'spec1': '18.2°C Cold Chain',\n-      'spec2': 'Verified Quality AA',\n-      'imageUrl':\n-          'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?q=80&w=800&auto=format&fit=crop',\n-    },\n-    {\n-      'id': 103,\n-      'title': 'Raw Fermented Cocoa Beans Grade 1',\n-      'scientificName': 'Theobroma cacao',\n-      'farmerName': 'SOCOOPAC Co-operative',\n-      'locationAxis': 'Export Grade',\n-      'category': 'COCOA',\n-      'pricePerUnit': 2850,\n-      'unitType': 'kg',\n-      'availableQuantity': 1200.0,\n-      'inventoryPercent': 0.85,\n-      'distanceKm': 34.0,\n-      'gradeBadge': 'Traceable #442',\n-      'telemetryInfo': 'Moisture Content: 7.1% · Certified Bio',\n-      'timeAgo': 'Locked Buffer',\n-      'spec1': 'Moisture: 7.1%',\n-      'spec2': 'Escrow Securitized',\n-      'imageUrl':\n-          'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?q=80&w=800&auto=format&fit=crop',\n-    },\n-    {\n-      'id': 104,\n-      'title': 'White Sweet Cassava Tubers',\n-      'scientificName': 'Manihot esculenta',\n-      'farmerName': 'Mbankomo Agri Union',\n-      'locationAxis': 'Center Region',\n-      'category': 'TUBERS',\n-      'pricePerUnit': 300,\n-      'unitType': 'kg',\n-      'availableQuantity': 4000.0,\n-      'inventoryPercent': 0.55,\n-      'distanceKm': 12.1,\n-      'gradeBadge': 'Fresh Harvest',\n-      'telemetryInfo': 'Mbankomo Union · Washed & Cleaned Root',\n-      'timeAgo': 'Yesterday',\n-      'spec1': 'Direct Root Delivery',\n-      'spec2': 'Washed & Sorted',\n-      'imageUrl':\n-          'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?q=80&w=800&auto=format&fit=crop',\n-    },\n-  ];\n-\n*** End Patch\n"
+
+Edit , 
+
+Ran terminal command: Set-Location 'C:\Users\lenovo p14s\Music\AGRONEXUS\frontend'; flutter analyze lib\main.dart lib\services\api_service.dart lib\services\auth_provider.dart lib\screens\dashboards\farmer_dashboard.dart lib\screens\dashboards\buyer_dashboard.dart lib\screens\produce\add_produce_screen.dart
+
+Ran terminal command: $env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot'; Set-Location 'C:\Users\lenovo p14s\Music\AGRONEXUS\backend'; mvn -q -DskipTests compile
+
+Search for `_quantity`
+
+Edit 
+
+Search for `EUNICE|Jean-Paul|Buyer|user\?|currentUser|auth`
+
+Read , lines 450 to 580
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\screens\\dashboards\\buyer_dashboard.dart",
+  "view_range": [
+    450,
+    580
+  ]
+}
+
+Search for `currentUser|userName|email|Text\(`
+
+Ran terminal command: Set-Location 'C:\Users\lenovo p14s\Music\AGRONEXUS\frontend'; flutter analyze lib\main.dart lib\services\api_service.dart lib\services\auth_provider.dart lib\screens\dashboards\farmer_dashboard.dart lib\screens\dashboards\buyer_dashboard.dart lib\screens\produce\add_produce_screen.dart
+
+Ran terminal command: $env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot'; Set-Location 'C:\Users\lenovo p14s\Music\AGRONEXUS\backend'; mvn -q -DskipTests compile
+
+Search for `482500|3500\.0|21\.4|Grade-1 Arabica|Premium Cocoa|Organic Plantain Bunch|_sa...`
+
+Read , lines 570 to 640
+Completed with input: {
+  "path": "C:\\Users\\lenovo p14s\\Music\\AGRONEXUS\\frontend\\lib\\screens\\dashboards\\buyer_dashboard.dart",
+  "view_range": [
+    570,
+    640
+  ]
+}
+
+Edit 
+
+Edit 
+
+Edit 
+
+Ran terminal command: Set-Location 'C:\Users\lenovo p14s\Music\AGRONEXUS\frontend'; flutter analyze lib\main.dart lib\services\api_service.dart lib\services\auth_provider.dart lib\screens\dashboards\farmer_dashboard.dart lib\screens\dashboards\buyer_dashboard.dart lib\screens\produce\add_produce_screen.dart
+
+Ran terminal command: $env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot'; Set-Location 'C:\Users\lenovo p14s\Music\AGRONEXUS\backend'; mvn -q -DskipTests compile
+
+Ran terminal command: git --no-pager diff --stat -- frontend/lib/main.dart frontend/lib/services/api_service.dart frontend/lib/services/auth_provider.dart frontend/lib/screens/dashboards/farmer_dashboard.dart frontend/lib/screens/dashboards/buyer_dashboard.dart frontend/lib/screens/produce/add_produce_screen.dart backend/src/main/java/com/agronexus/api/controller/FarmerDashboardController.java backend/src/main/java/com/agronexus/api/controller/ProductController.java backend/src/main/java/com/agronexus/api/repository/OrderRepository.java backend/src/main/java/com/agronexus/api/repository/TelemetryLogRepository.java
+
+Implemented the dynamic user-data wiring.
+
+### What is now dynamic
+
+- Farmer dashboard now loads:
+  - Logged-in farmer name, email, and initials
+  - Farmer’s actual produce listings
+  - Active lot count
+  - Total available quantity
+  - Escrow balance from active escrow orders
+  - Latest telemetry data when available
+- Farmer produce list no longer displays hard-coded harvest batches.
+- Buyer dashboard now displays only products returned by the backend.
+- Removed the automatic demo-product fallback from the buyer marketplace.
+- Buyer profile avatar now uses the logged-in buyer’s initials.
+- Transporter, agronomist, and admin placeholder dashboards now display the authenticated user’s:
+  - Name
+  - Email
+  - Role
+  - Role-specific dashboard message
+- Authenticated user identity and tokens are restored correctly after app relaunch.
+- Farmer product creation now reports real API failures instead of showing a false success message.
+
+### Backend changes
+
+Added dynamic farmer endpoints:
+
+- `GET /api/v1/farmers/me/dashboard`
+- `GET /api/v1/products/mine`
+
+The farmer dashboard now uses the authenticated JWT user instead of relying on a hard-coded user ID.
+
+Updated files:
+
+- `main.dart`
+- `api_service.dart`
+- `auth_provider.dart`
+- `farmer_dashboard.dart`
+- `buyer_dashboard.dart`
+- `add_produce_screen.dart`
+- `FarmerDashboardController.java`
+- `ProductController.java`
+- `OrderRepository.java`
+- `TelemetryLogRepository.java`
+
+### Validation
+
+- Flutter analysis: **No issues found**
+- Maven backend compilation: **Successful**
+
+The transporter, agronomist, and admin dashboards now use real login credentials, but their full business workflows—delivery jobs, advisory requests, approvals, disputes, and administration—still need dedicated backend endpoints and screens.
