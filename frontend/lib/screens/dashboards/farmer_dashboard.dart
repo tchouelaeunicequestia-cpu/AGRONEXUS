@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/draft_service.dart';
 import '../../services/platform_services.dart';
 import '../produce/add_produce_screen.dart';
 
@@ -16,6 +17,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
   bool _isLoading = true;
   Map<String, dynamic> _dashboardData = {};
   List<Map<String, dynamic>> _products = [];
+  List<Map<String, dynamic>> _drafts = [];
   String _locationString = 'Bafia North • Lat 4.7502° N, Lon 11.2331° E';
   bool _isRefreshing = false;
 
@@ -30,6 +32,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
     try {
       final data = await ApiService.getFarmerDashboardMetrics();
       final products = await ApiService.getFarmerProducts();
+      final drafts = await DraftService.loadDrafts();
       
       try {
         final locService = LocationServiceFactory.getService();
@@ -43,6 +46,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
         setState(() {
           _dashboardData = data;
           _products = products;
+          _drafts = drafts;
           _isLoading = false;
           _isRefreshing = false;
         });
@@ -332,12 +336,12 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Active Harvest Lots',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF003820)),
+                              _drafts.isNotEmpty ? 'Harvest Lots & Drafts' : 'Active Harvest Lots',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF003820)),
                             ),
                             Text(
-                              '${_products.length} Commodities',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF16a34a)),
+                              '${_products.length + _drafts.length} Items',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF16a34a)),
                             ),
                           ],
                         ),
@@ -353,27 +357,41 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                             ],
                           ),
                           child: Column(
-                            children: _products.isEmpty
-                                ? [
-                                    const Padding(
-                                      padding: EdgeInsets.all(16),
-                                      child: Text(
-                                        'You have not published any produce yet.',
-                                        style: TextStyle(color: Color(0xFF64748B)),
+                            children: [
+                              ..._products.isEmpty && _drafts.isEmpty
+                                  ? [
+                                      const Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: Text(
+                                          'You have not published any produce yet.',
+                                          style: TextStyle(color: Color(0xFF64748B)),
+                                        ),
                                       ),
-                                    ),
-                                  ]
-                                : [
-                                    for (var i = 0; i < _products.length; i++) ...[
-                                      _buildHarvestLotItem(
-                                        _products[i]['title']?.toString() ?? 'Produce lot',
-                                        '${_products[i]['availableQuantity'] ?? 0} ${_products[i]['unitType'] ?? 'kg'} Available',
-                                        '${_products[i]['pricePerUnit'] ?? 0} XAF / ${_products[i]['unitType'] ?? 'kg'}',
-                                        _products[i]['isActive'] == false ? 'Inactive' : 'Active',
-                                      ),
-                                      if (i < _products.length - 1) const Divider(height: 24),
+                                    ]
+                                  : [
+                                      for (var i = 0; i < _products.length; i++) ...[
+                                        _buildHarvestLotItem(
+                                          _products[i]['title']?.toString() ?? 'Produce lot',
+                                          '${_products[i]['availableQuantity'] ?? 0} ${_products[i]['unitType'] ?? 'kg'} Available',
+                                          '${_products[i]['pricePerUnit'] ?? 0} XAF / ${_products[i]['unitType'] ?? 'kg'}',
+                                          'Active',
+                                          isDraft: false,
+                                        ),
+                                        if (i < _products.length - 1 || _drafts.isNotEmpty) const Divider(height: 24),
+                                      ],
+                                      for (var i = 0; i < _drafts.length; i++) ...[
+                                        _buildHarvestLotItem(
+                                          _drafts[i]['title']?.toString() ?? 'Untitled Draft',
+                                          '${_drafts[i]['availableQuantity'] ?? 0} ${_drafts[i]['unitType'] ?? 'kg'} Available',
+                                          '${_drafts[i]['pricePerUnit'] ?? 0} XAF / ${_drafts[i]['unitType'] ?? 'kg'}',
+                                          'Draft',
+                                          isDraft: true,
+                                          draftId: _drafts[i]['id']?.toString(),
+                                        ),
+                                        if (i < _drafts.length - 1) const Divider(height: 24),
+                                      ],
                                     ],
-                                  ],
+                            ],
                           ),
                         ),
                         const SizedBox(height: 40),
@@ -479,7 +497,14 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
     );
   }
 
-  Widget _buildHarvestLotItem(String title, String qty, String price, String status) {
+  Widget _buildHarvestLotItem(
+    String title,
+    String qty,
+    String price,
+    String status, {
+    bool isDraft = false,
+    String? draftId,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -488,10 +513,14 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFe1fae7),
+                color: isDraft ? const Color(0xFFFFF8E1) : const Color(0xFFe1fae7),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.eco_rounded, color: Color(0xFF006c49), size: 22),
+              child: Icon(
+                isDraft ? Icons.edit_note_rounded : Icons.eco_rounded,
+                color: isDraft ? const Color(0xFFE65100) : const Color(0xFF006c49),
+                size: 22,
+              ),
             ),
             const SizedBox(width: 14),
             Column(
@@ -507,15 +536,47 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(price, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF006c49))),
+            Text(price, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDraft ? const Color(0xFFE65100) : const Color(0xFF006c49))),
             const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFd6eedc),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(status, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF005236))),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isDraft ? const Color(0xFFFFE0B2) : const Color(0xFFd6eedc),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isDraft ? const Color(0xFFE65100) : const Color(0xFF005236),
+                    ),
+                  ),
+                ),
+                if (isDraft && draftId != null) ...[
+                  const SizedBox(width: 4),
+                  InkWell(
+                    onTap: () async {
+                      await DraftService.deleteDraft(draftId);
+                      _fetchLiveDashboardData();
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFCDD2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Delete',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFBA1A1A)),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),

@@ -1,7 +1,10 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_provider.dart';
+import '../../services/draft_service.dart';
+import '../../services/image_picker_service.dart';
 import '../../services/platform_services.dart';
 import '../../services/secure_storage_service.dart';
 
@@ -25,6 +28,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
   String _category = 'FRUITS';
   String _unitType = 'kg';
   String _selectedStorageNode = 'esp32_01';
+  bool _hasIoTNode = false;
   String _selectedGrade = 'Grade A+ Export';
   int _activeProofIndex = 0;
 
@@ -54,11 +58,11 @@ class _AddProduceScreenState extends State<AddProduceScreen>
     {'label': '+ Raw Cocoa F3', 'title': 'Raw Fermented Cocoa Beans Grade 1', 'cat': 'COCOA', 'price': '2850'},
   ];
 
-  // Mutable — starts empty; url is null until farmer captures/uploads a photo
+  // Mutable — starts empty; url/bytes are null until farmer captures/uploads a photo
   final List<Map<String, dynamic>> _harvestProofs = [
-    {'title': 'Overview',    'sub': 'Batch Overview',    'url': null},
-    {'title': 'Stem Cut',    'sub': 'Fresh Cut Proof',   'url': null},
-    {'title': 'Scale/Weight','sub': 'Depot Weight Proof', 'url': null},
+    {'title': 'Overview',    'sub': 'Batch Overview',    'url': null, 'bytes': null},
+    {'title': 'Stem Cut',    'sub': 'Fresh Cut Proof',   'url': null, 'bytes': null},
+    {'title': 'Scale/Weight','sub': 'Depot Weight Proof', 'url': null, 'bytes': null},
   ];
 
   final List<Map<String, String>> _unitTypes = [
@@ -211,21 +215,27 @@ class _AddProduceScreenState extends State<AddProduceScreen>
   }
 
   /// Called when farmer taps Take Photo or Choose Gallery for an angle slot.
-  void _simulatePhotoCapture(int slotIndex, {bool fromGallery = false}) {
-    // In a real app, use image_picker here and store the File path.
-    // For now, mark the slot as captured so the UI shows "Photo Added".
-    final demoUrls = [
-      'https://images.unsplash.com/photo-1528825871115-3581a5387919?q=80&w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?q=80&w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?q=80&w=400&auto=format&fit=crop',
-    ];
-    setState(() {
-      _harvestProofs[slotIndex]['url'] = demoUrls[slotIndex % demoUrls.length];
-      _activeProofIndex = slotIndex;
-    });
-    _showSnackBar(
-      fromGallery ? 'Photo selected from gallery!' : 'Photo captured via camera!',
-    );
+  Future<void> _capturePhoto(int slotIndex, {bool fromGallery = false}) async {
+    try {
+      final picked = await ImagePickerService.pickImage(fromCamera: !fromGallery);
+      if (picked != null && mounted) {
+        setState(() {
+          _harvestProofs[slotIndex]['url'] = picked.dataUrl;
+          _harvestProofs[slotIndex]['bytes'] = picked.bytes;
+          _activeProofIndex = slotIndex;
+        });
+        _showSnackBar(
+          fromGallery
+              ? 'Photo selected from gallery: ${picked.name}'
+              : 'Photo captured: ${picked.name}',
+          isError: false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Could not open image picker: $e', isError: true);
+      }
+    }
   }
 
   Future<void> _submitListing() async {
@@ -253,7 +263,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
           'category': _category,
           'description': _descriptionController.text.trim().isNotEmpty
               ? _descriptionController.text.trim()
-              : 'Harvest batch verified by $_selectedGrade and $_selectedStorageNode telemetry.',
+              : 'Harvest batch verified by $_selectedGrade${_hasIoTNode ? ' and $_selectedStorageNode telemetry' : ' (Standard storage)'}.',
           'pricePerUnit': _unitPrice,
           'unitType': _unitType,
           'availableQuantity': _quantity,
@@ -292,6 +302,39 @@ class _AddProduceScreenState extends State<AddProduceScreen>
     }
   }
 
+  Future<void> _saveDraft() async {
+    setState(() => _isLoading = true);
+    try {
+      final storage = SecureStorageService();
+      final userIdStr = await storage.getUserId();
+      final farmerId = userIdStr != null ? int.tryParse(userIdStr) ?? 1 : 1;
+
+      await DraftService.saveDraft({
+        'title': _titleController.text.trim().isNotEmpty
+            ? _titleController.text.trim()
+            : 'Untitled Draft',
+        'category': _category,
+        'pricePerUnit': _unitPrice,
+        'unitType': _unitType,
+        'availableQuantity': _quantity,
+        'farmerId': farmerId,
+        'isDraft': true,
+      });
+
+      if (mounted) {
+        _showSnackBar('Draft saved! Visible in your dashboard.', isError: false);
+        await Future.delayed(const Duration(milliseconds: 800));
+        if (mounted) Navigator.pop(context, 'draft');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Could not save draft: $e', isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   void _showSnackBar(String msg, {bool isError = false}) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -316,8 +359,11 @@ class _AddProduceScreenState extends State<AddProduceScreen>
     final activeTelemetry = _telemetryMetricsByNode[_selectedStorageNode] ??
         _telemetryMetricsByNode['esp32_01']!;
 
-    // Null when farmer hasn't taken a photo yet for this slot
-    final activePhotoUrl = _harvestProofs[_activeProofIndex]['url'] as String?;
+    // Active photo data (bytes from real picker, or fallback URL)
+    final activeProof = _harvestProofs[_activeProofIndex];
+    final activePhotoUrl = activeProof['url'] as String?;
+    final activeBytes = activeProof['bytes'] as Uint8List?;
+    final hasActivePhoto = activeBytes != null || (activePhotoUrl != null && activePhotoUrl.isNotEmpty);
 
     return Scaffold(
       backgroundColor: const Color(0xFFE9FFED),
@@ -467,7 +513,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
 
                 // STEP 1: Produce Identity
                 _buildCardSection(
-                  stepNumber: 'Step 1 of 4',
+                  stepNumber: 'Step 1 of 3',
                   title: 'Produce Identity',
                   subtitle: 'Taxonomy, regional cultivar & classification',
                   icon: Icons.eco_rounded,
@@ -632,9 +678,11 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           color: const Color(0xFFE1FAE7),
-                          image: activePhotoUrl != null
+                          image: hasActivePhoto
                               ? DecorationImage(
-                                  image: NetworkImage(activePhotoUrl),
+                                  image: activeBytes != null
+                                      ? MemoryImage(activeBytes) as ImageProvider
+                                      : NetworkImage(activePhotoUrl!),
                                   fit: BoxFit.cover,
                                 )
                               : null,
@@ -642,7 +690,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                         child: Stack(
                           children: [
                             // Gradient overlay — only when photo is present
-                            if (activePhotoUrl != null)
+                            if (hasActivePhoto)
                               Container(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(16),
@@ -659,7 +707,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                               ),
 
                             // Upload placeholder — shown when no photo yet
-                            if (activePhotoUrl == null)
+                            if (!hasActivePhoto)
                               Center(
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
@@ -691,7 +739,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                               ),
 
                             // EXIF badge — only when photo is captured
-                            if (activePhotoUrl != null)
+                            if (hasActivePhoto)
                               Positioned(
                                 top: 10,
                                 left: 10,
@@ -726,12 +774,12 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                               ),
 
                             // Edit button — only when photo is captured
-                            if (activePhotoUrl != null)
+                            if (hasActivePhoto)
                               Positioned(
                                 top: 10,
                                 right: 10,
                                 child: InkWell(
-                                  onTap: () => _simulatePhotoCapture(_activeProofIndex),
+                                  onTap: () => _capturePhoto(_activeProofIndex, fromGallery: true),
                                   child: Container(
                                     width: 32,
                                     height: 32,
@@ -749,7 +797,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                               ),
 
                             // AI quality check chip — only when photo is captured
-                            if (activePhotoUrl != null)
+                            if (hasActivePhoto)
                               Positioned(
                                 left: 10,
                                 right: 10,
@@ -817,7 +865,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                         children: [
                           Expanded(
                             child: InkWell(
-                              onTap: () => _simulatePhotoCapture(_activeProofIndex),
+                              onTap: () => _capturePhoto(_activeProofIndex, fromGallery: false),
                               borderRadius: BorderRadius.circular(12),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -850,7 +898,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                           const SizedBox(width: 8),
                           Expanded(
                             child: InkWell(
-                              onTap: () => _simulatePhotoCapture(_activeProofIndex, fromGallery: true),
+                              onTap: () => _capturePhoto(_activeProofIndex, fromGallery: true),
                               borderRadius: BorderRadius.circular(12),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -886,9 +934,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
 
                       // Harvest Angle Proofs — dynamic count label
                       Builder(builder: (ctx) {
-                        final captured = _harvestProofs
-                            .where((p) => p['url'] != null)
-                            .length;
+                        final captured = _harvestProofs.where((p) => p['bytes'] != null || (p['url'] != null && (p['url'] as String).isNotEmpty)).length;
                         return Text(
                           'Harvest Angle Proofs ($captured/${_harvestProofs.length} Captured)',
                           style: const TextStyle(
@@ -903,7 +949,9 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                         children: List.generate(_harvestProofs.length, (idx) {
                           final proof = _harvestProofs[idx];
                           final isSelected = _activeProofIndex == idx;
+                          final thumbBytes = proof['bytes'] as Uint8List?;
                           final thumbUrl = proof['url'] as String?;
+                          final hasThumb = thumbBytes != null || (thumbUrl != null && thumbUrl.isNotEmpty);
 
                           return Expanded(
                             child: Padding(
@@ -911,9 +959,8 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                               child: InkWell(
                                 onTap: () {
                                   setState(() => _activeProofIndex = idx);
-                                  if (thumbUrl == null) {
-                                    // Slot empty — immediately open camera for this slot
-                                    _simulatePhotoCapture(idx);
+                                  if (!hasThumb) {
+                                    _capturePhoto(idx, fromGallery: true);
                                   }
                                 },
                                 borderRadius: BorderRadius.circular(10),
@@ -927,12 +974,14 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                                           : const Color(0xFFC0C9C0),
                                       width: isSelected ? 2 : 1,
                                     ),
-                                    color: thumbUrl == null
+                                    color: !hasThumb
                                         ? const Color(0xFFE1FAE7)
                                         : null,
-                                    image: thumbUrl != null
+                                    image: hasThumb
                                         ? DecorationImage(
-                                            image: NetworkImage(thumbUrl),
+                                            image: thumbBytes != null
+                                                ? MemoryImage(thumbBytes) as ImageProvider
+                                                : NetworkImage(thumbUrl!),
                                             fit: BoxFit.cover,
                                           )
                                         : null,
@@ -941,7 +990,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                                     alignment: Alignment.center,
                                     children: [
                                       // Empty slot UI
-                                      if (thumbUrl == null)
+                                      if (!hasThumb)
                                         Column(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
@@ -964,7 +1013,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                                         ),
 
                                       // Label bar — shown only when photo is set
-                                      if (thumbUrl != null)
+                                      if (hasThumb)
                                         Positioned(
                                           left: 0,
                                           right: 0,
@@ -993,7 +1042,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                                           ),
                                         ),
 
-                                      if (isSelected && thumbUrl != null)
+                                      if (isSelected && hasThumb)
                                         const Positioned(
                                           top: 2,
                                           right: 2,
@@ -1018,7 +1067,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
 
                 // STEP 2: Pricing & Available Volume
                 _buildCardSection(
-                  stepNumber: 'Step 2 of 4',
+                  stepNumber: 'Step 2 of 3',
                   title: 'Pricing & Available Volume',
                   subtitle: 'Real-time valuation in Central African CFA (XAF)',
                   icon: Icons.scale_rounded,
@@ -1230,90 +1279,165 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                 ),
                 const SizedBox(height: 16),
 
-                // STEP 3: IoT Silo & Telemetry Link
+                // STEP 3: IoT Silo & Telemetry Link (Optional)
                 _buildCardSection(
-                  stepNumber: 'Step 3 of 4',
+                  stepNumber: 'Optional',
                   title: 'IoT Silo & Telemetry Link',
                   subtitle: 'Automated Quality Attestation',
                   icon: Icons.sensors_rounded,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Attached Storage Node',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF404942),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
+                      // Toggle row to link/unlink IoT node
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: const Color(0xFFE1FAE7),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedStorageNode,
-                            isExpanded: true,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF0B1F14),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  _hasIoTNode ? Icons.sensors_rounded : Icons.sensors_off_rounded,
+                                  color: _hasIoTNode ? const Color(0xFF006C49) : const Color(0xFF64748B),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Connect IoT Storage Node',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0B1F14),
+                                      ),
+                                    ),
+                                    Text(
+                                      _hasIoTNode ? 'Active telemetry feed linked' : 'Optional — produce listed under ambient storage',
+                                      style: const TextStyle(fontSize: 10, color: Color(0xFF404942)),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                            items: _storageNodes.map((s) {
-                              return DropdownMenuItem<String>(
-                                value: s['value'],
-                                child: Text(s['label']!),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() => _selectedStorageNode = val);
-                              }
-                            },
-                          ),
+                            Switch(
+                              value: _hasIoTNode,
+                              activeThumbColor: const Color(0xFF003820),
+                              activeTrackColor: const Color(0xFF6CF8BB),
+                              onChanged: (val) => setState(() => _hasIoTNode = val),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 12),
 
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTelemetryMiniCard(
-                              icon: Icons.thermostat_rounded,
-                              label: 'Temp',
-                              value: activeTelemetry['temp']!,
-                              status: activeTelemetry['tempStatus']!,
+                      if (!_hasIoTNode) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCF4E1).withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFC0C9C0)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF006C49)),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Standard harvest listing without IoT sensor link. Select your produce quality grade below.',
+                                  style: TextStyle(fontSize: 11, color: Color(0xFF404942)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      if (_hasIoTNode) ...[
+                        const Text(
+                          'Attached Storage Node',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF404942),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE1FAE7),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _selectedStorageNode,
+                              isExpanded: true,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0B1F14),
+                              ),
+                              items: _storageNodes.map((s) {
+                                return DropdownMenuItem<String>(
+                                  value: s['value'],
+                                  child: Text(s['label']!),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() => _selectedStorageNode = val);
+                                }
+                              },
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildTelemetryMiniCard(
-                              icon: Icons.water_drop_rounded,
-                              label: 'Moisture',
-                              value: activeTelemetry['moisture']!,
-                              status: activeTelemetry['moistureStatus']!,
+                        ),
+                        const SizedBox(height: 12),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTelemetryMiniCard(
+                                icon: Icons.thermostat_rounded,
+                                label: 'Temp',
+                                value: activeTelemetry['temp']!,
+                                status: activeTelemetry['tempStatus']!,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildTelemetryMiniCard(
-                              icon: Icons.battery_charging_full_rounded,
-                              label: 'Power',
-                              value: activeTelemetry['power']!,
-                              status: activeTelemetry['powerStatus']!,
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildTelemetryMiniCard(
+                                icon: Icons.water_drop_rounded,
+                                label: 'Moisture',
+                                value: activeTelemetry['moisture']!,
+                                status: activeTelemetry['moistureStatus']!,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildTelemetryMiniCard(
+                                icon: Icons.battery_charging_full_rounded,
+                                label: 'Power',
+                                value: activeTelemetry['power']!,
+                                status: activeTelemetry['powerStatus']!,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 14),
 
-                      const Text(
-                        'Produce Quality Grade (Verified by IoT Telemetry)',
-                        style: TextStyle(
+                      Text(
+                        _hasIoTNode
+                            ? 'Produce Quality Grade (Verified by IoT Telemetry)'
+                            : 'Produce Quality Grade (Self-Declared)',
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF404942),
@@ -1377,7 +1501,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
 
                 // STEP 4: PostGIS Farm Gate Proximity Lock
                 _buildCardSection(
-                  stepNumber: 'Locked',
+                  stepNumber: 'Step 3 of 3',
                   title: 'PostGIS Farm Gate Proximity Lock',
                   subtitle: 'SRID 4326 High-Precision Ephemeris',
                   icon: Icons.location_on_rounded,
@@ -1763,9 +1887,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: () {
-                      _showSnackBar('Saved Draft in Local SQLite Sandbox!');
-                    },
+                    onPressed: _isLoading ? null : _saveDraft,
                     icon: const Icon(
                       Icons.save_rounded,
                       size: 18,

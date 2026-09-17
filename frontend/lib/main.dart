@@ -1,8 +1,12 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboards/farmer_dashboard.dart';
 import 'screens/dashboards/buyer_dashboard.dart';
+import 'screens/dashboards/transporter_dashboard.dart';
+import 'screens/dashboards/agronomist_dashboard.dart';
+import 'screens/dashboards/admin_dashboard.dart';
 import 'services/auth_provider.dart';
 import 'theme/app_theme.dart';
 
@@ -39,23 +43,11 @@ class AgroNexusApp extends StatelessWidget {
             case 'BUYER':
               return const BuyerDashboard();
             case 'TRANSPORTER':
-              return const RoleDashboardPlaceholder(
-                roleTitle: 'Transporter Logistics Hub',
-                icon: Icons.local_shipping_outlined,
-                accentColor: Color(0xFF2563EB),
-              );
+              return const TransporterDashboard();
             case 'AGRONOMIST':
-              return const RoleDashboardPlaceholder(
-                roleTitle: 'Agronomist Advisory Console',
-                icon: Icons.psychology_outlined,
-                accentColor: Color(0xFF16A34A),
-              );
+              return const AgronomistDashboard();
             case 'ADMIN':
-              return const RoleDashboardPlaceholder(
-                roleTitle: 'System Admin Control Panel',
-                icon: Icons.admin_panel_settings_outlined,
-                accentColor: Color(0xFFD97706),
-              );
+              return const AdminDashboard();
             default:
               return const RoleDashboardPlaceholder(
                 roleTitle: 'General Dashboard',
@@ -142,12 +134,14 @@ class RoleDashboardPlaceholder extends StatelessWidget {
                     color: accentColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Text(
-                    initials,
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: accentColor,
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: accentColor,
+                      ),
                     ),
                   ),
                 ),
@@ -184,7 +178,7 @@ class RoleDashboardPlaceholder extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          _roleMessage(auth.role),
+                          'Your authenticated AgroNexus profile is active.',
                           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryEmerald),
                         ),
                       ),
@@ -197,18 +191,5 @@ class RoleDashboardPlaceholder extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _roleMessage(String? role) {
-    switch (role) {
-      case 'TRANSPORTER':
-        return 'Your transporter profile is active. Assigned delivery jobs will appear here.';
-      case 'AGRONOMIST':
-        return 'Your agronomist profile is active. Advisory requests will appear here.';
-      case 'ADMIN':
-        return 'Your administrator profile is active. Approvals and platform alerts will appear here.';
-      default:
-        return 'Your authenticated AgroNexus profile is active.';
-    }
   }
 }
