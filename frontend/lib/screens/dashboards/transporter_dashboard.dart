@@ -1,5 +1,4 @@
 // lib/screens/dashboards/transporter_dashboard.dart
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_provider.dart';
@@ -14,7 +13,6 @@ class TransporterDashboard extends StatefulWidget {
 
 class _TransporterDashboardState extends State<TransporterDashboard> {
   bool _isLoading = true;
-  bool _isRadarActive = true;
   Map<String, dynamic> _metrics = {};
 
   @override

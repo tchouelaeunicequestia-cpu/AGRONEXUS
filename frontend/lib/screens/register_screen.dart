@@ -25,7 +25,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   bool _isFaceScanned = false;
   double? _lat;
   double? _lon;
-  final String _locationName = 'Centre Region, Yaoundé';
 
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;

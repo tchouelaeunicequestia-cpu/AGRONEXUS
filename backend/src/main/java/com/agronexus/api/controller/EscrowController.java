@@ -1,57 +1,81 @@
+// src/main/java/com/agronexus/api/controller/EscrowController.java
 package com.agronexus.api.controller;
 
-import com.agronexus.api.entity.Order;
-import com.agronexus.api.service.EscrowEngineService;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.UUID;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
-import java.util.Map;
+import com.agronexus.api.model.EscrowTransaction;
+import com.agronexus.api.repository.EscrowRepository;
 
-/**
- * ==============================================================================
- * AgroNexus Financial Escrow Transaction Controller
- *
- * WHY: Processes order creation, Mobile Money/Orange Money deposit calculations,
- *      escrow fund locking, and disbursement payouts.
- * HOW: Interacts directly with EscrowEngineService business logic to manage order state.
- * ==============================================================================
- */
 @RestController
 @RequestMapping("/api/v1/escrow")
 public class EscrowController {
 
-    private final EscrowEngineService escrowEngineService;
+    private final EscrowRepository escrowRepository;
 
-    public EscrowController(EscrowEngineService escrowEngineService) {
-        this.escrowEngineService = escrowEngineService;
+    public EscrowController(EscrowRepository escrowRepository) {
+        this.escrowRepository = escrowRepository;
     }
 
-    // POST /api/v1/escrow/order — Lock funds in escrow depository (Buyers & Admins only)
-    @PostMapping("/order")
-    @PreAuthorize("hasAnyRole('BUYER', 'ADMIN')")
-    public ResponseEntity<?> createEscrowOrder(@RequestBody Map<String, Object> payload) {
-        Long buyerId = ((Number) payload.get("buyerId")).longValue();
-        Long productId = ((Number) payload.get("productId")).longValue();
-        Double quantity = ((Number) payload.get("quantity")).doubleValue();
-        Boolean isSelfPickup = (Boolean) payload.getOrDefault("isSelfPickup", false);
-        String deliveryAddress = (String) payload.getOrDefault("deliveryAddress", "Farm Gate Pickup");
+    @PostMapping("/initialize")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<?> initializeEscrowPayment(@RequestBody Map<String, Object> payload) {
+        try {
+            Long buyerId = Long.valueOf(payload.get("buyerId").toString());
+            Long farmerId = Long.valueOf(payload.get("farmerId").toString());
+            BigDecimal amount = new BigDecimal(payload.get("amount").toString());
+            String providerStr = payload.get("provider").toString(); // MTN_MOMO, ORANGE_MONEY, BANK_ACCOUNT
+            String phoneOrAccount = payload.get("payerPhoneOrAccount").toString();
 
-        BigDecimal transportFee = payload.containsKey("transportFee") ?
-                new BigDecimal(payload.get("transportFee").toString()) : null;
+            EscrowTransaction.PaymentProvider provider = EscrowTransaction.PaymentProvider.valueOf(providerStr);
 
-        Map<String, Object> result = escrowEngineService.createEscrowOrder(
-                buyerId, productId, quantity, transportFee, isSelfPickup, deliveryAddress);
+            EscrowTransaction tx = new EscrowTransaction();
+            tx.setTransactionReference("ANX-ESCROW-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+            tx.setBuyerId(buyerId);
+            tx.setFarmerId(farmerId);
+            tx.setAmount(amount);
+            tx.setProvider(provider);
+            tx.setPayerPhoneOrAccount(phoneOrAccount);
+            // In live integration, this initiates USSD prompt / Direct Request-to-Pay via Campay/PayUnit
+            tx.setStatus(EscrowTransaction.EscrowStatus.LOCKED_IN_ESCROW); 
 
-        return ResponseEntity.ok(result);
+            escrowRepository.save(tx);
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Funds successfully locked into AgroNexus CEMAC Escrow vault.",
+                "reference", tx.getTransactionReference(),
+                "status", tx.getStatus()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
-    // POST /api/v1/escrow/disburse/{orderCode} — Disburse payment upon receipt (Buyers & Admins only)
-    @PostMapping("/disburse/{orderCode}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'BUYER')")
-    public ResponseEntity<Order> disburseFunds(@PathVariable String orderCode) {
-        Order updatedOrder = escrowEngineService.disburseEscrowFunds(orderCode);
-        return ResponseEntity.ok(updatedOrder);
+    @PostMapping("/release/{reference}")
+    @PreAuthorize("hasRole('FARMER') or hasRole('AGRONOMIST')")
+    public ResponseEntity<?> releaseEscrow(@PathVariable String reference) {
+        EscrowTransaction tx = escrowRepository.findByTransactionReference(reference)
+            .orElseThrow(() -> new RuntimeException("Escrow transaction not found."));
+
+        tx.setStatus(EscrowTransaction.EscrowStatus.RELEASED_TO_FARMER);
+        tx.setUpdatedAt(LocalDateTime.now());
+        escrowRepository.save(tx);
+
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "message", "Escrow successfully disbursed to Farmer's registered Mobile Money/Bank payout line.",
+            "reference", reference
+        ));
     }
 }

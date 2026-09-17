@@ -130,8 +130,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
+                      Expanded(
+                        child: Row(
+                          children: [
                           Container(
                             width: 40,
                             height: 40,
@@ -142,7 +143,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             child: const Icon(Icons.eco_rounded, color: Colors.white, size: 20),
                           ),
                           const SizedBox(width: 12),
-                          const Column(
+                          const Expanded(
+                            child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
@@ -152,12 +154,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               Text(
                                 'Identity & RBAC Access Gateway',
                                 style: TextStyle(fontSize: 11, color: Color(0xFF64748b), fontWeight: FontWeight.w500),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
+                            ),
                           ),
-                        ],
+                          ],
+                        ),
                       ),
-                      Container(
+                      Flexible(
+                        child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: const Color(0xFFdcf4e1),
@@ -167,6 +174,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         child: const Text(
                           'BEAC / CEMAC Ready',
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF006c49)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         ),
                       ),
                     ],

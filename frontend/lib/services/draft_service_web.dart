@@ -1,11 +1,10 @@
-// ignore_for_file: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 
 /// Web implementation: reads/writes from browser localStorage.
 void writeToStorage(String key, String value) {
-  html.window.localStorage[key] = value;
+  web.window.localStorage.setItem(key, value);
 }
 
 String? readFromStorage(String key) {
-  return html.window.localStorage[key];
+  return web.window.localStorage.getItem(key);
 }
