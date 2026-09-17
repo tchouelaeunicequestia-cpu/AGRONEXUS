@@ -1,9 +1,0 @@
-When you switch to a different Wi-Fi network (like moving from home to your university campus), your Wi-Fi router assigns a brand-new IP address to your laptop.
-
-If you want to test on your Infinix phone, you will just need to:
-
-Connect both your phone and laptop to the new Wi-Fi network.
-
-Run ipconfig in Command Prompt to grab your new IPv4 Address.
-
-Update the 192.168.x.x line in lib/services/api_service.dart.

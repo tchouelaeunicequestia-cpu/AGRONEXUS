@@ -10,6 +10,7 @@ import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -76,5 +77,11 @@ public class ProductController {
 
         List<Product> products = productRepository.findProductsWithinRadius(latitude, longitude, radiusMeters);
         return ResponseEntity.ok(products);
+    }
+
+    @GetMapping("/mine")
+    @PreAuthorize("hasRole('FARMER')")
+    public ResponseEntity<List<Product>> getMyProducts(@AuthenticationPrincipal User farmer) {
+        return ResponseEntity.ok(productRepository.findByFarmerId(farmer.getId()));
     }
 }

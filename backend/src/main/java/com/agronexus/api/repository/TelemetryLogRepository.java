@@ -24,4 +24,6 @@ public interface TelemetryLogRepository extends JpaRepository<TelemetryLog, Long
 
     // Fetch all logs where environmental safety thresholds (temperature/humidity/gas) were exceeded
     List<TelemetryLog> findByIsAlertTriggeredTrue();
+
+    TelemetryLog findTopByOrderByRecordedAtDesc();
 }

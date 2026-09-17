@@ -1,25 +1,44 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'secure_storage_service.dart';
 
 class ApiService {
+  static const String baseUrl = 'http://localhost:8080';
+
+  // Global token references used by auth provider and dashboards
+  static String? globalAccessToken;
+  static String? globalRefreshToken;
+  static int? globalUserId;
   static final SecureStorageService _storage = SecureStorageService();
 
-  // Dynamically resolve backend host based on execution platform
-  static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8080/api/v1';
-    } else if (Platform.isAndroid) {
-      return 'http://192.168.1.133:8080/api/v1';
+  /// Authenticate user credentials
+  static Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      globalAccessToken = data['accessToken'];
+      globalRefreshToken = data['refreshToken'];
+      globalUserId = data['userId'];
+      return data;
     } else {
-      return 'http://localhost:8080/api/v1';
+      final errorBody = jsonDecode(response.body);
+      throw Exception(errorBody['error'] ?? 'Authentication failed.');
     }
   }
 
-  // --- EPIC 1: AUTHENTICATION ---
-  static Future<bool> register({
+  /// Register a new user role with biometric profile data
+  static Future<Map<String, dynamic>> register({
     required String name,
     required String email,
     required String password,
@@ -28,144 +47,103 @@ class ApiService {
     double? longitude,
   }) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/auth/register'),
+      Uri.parse('$baseUrl/api/v1/auth/register'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'fullName': name,
         'email': email,
         'password': password,
         'role': role,
-        if (latitude != null) 'latitude': latitude,
-        if (longitude != null) 'longitude': longitude,
+        'latitude': latitude ?? 3.8480,
+        'longitude': longitude ?? 11.5021,
       }),
     );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return true;
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body);
     } else {
-      final errorData = jsonDecode(response.body);
-      throw Exception(
-        errorData['error'] ?? errorData['message'] ?? response.body,
-      );
+      final errorBody = jsonDecode(response.body);
+      throw Exception(errorBody['error'] ?? 'Registration failed.');
     }
   }
 
-  static Future<Map<String, dynamic>> login({
-    required String email,
-    required String password,
+  /// Generic authenticated HTTP request wrapper with proper positional endpoint and named options
+  static Future<http.Response> authenticatedRequest(
+    String endpoint, {
+    String method = 'GET',
+    Map<String, dynamic>? body,
+    String? token,
   }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
+    final activeToken =
+        token ?? globalAccessToken ?? await _storage.getAccessToken();
+    final uri = Uri.parse(endpoint.startsWith('http') ? endpoint : '$baseUrl$endpoint');
+    
+    Map<String, String> headers = {
+      'Content-Type': 'application/json',
+      if (activeToken != null) 'Authorization': 'Bearer $activeToken',
+    };
+
+    if (method == 'POST') {
+      return await http.post(uri, headers: headers, body: body != null ? jsonEncode(body) : null);
+    } else if (method == 'PUT') {
+      return await http.put(uri, headers: headers, body: body != null ? jsonEncode(body) : null);
+    } else {
+      return await http.get(uri, headers: headers);
+    }
+  }
+
+  /// Refresh token handler
+  static Future<bool> refreshAccessToken() async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/v1/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': globalRefreshToken}),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        globalAccessToken = data['accessToken'];
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  /// Fetches real-time escrow, yield, and IoT silo metrics for the logged-in farmer
+  static Future<Map<String, dynamic>> getFarmerDashboardMetrics() async {
+    final response = await authenticatedRequest('/api/v1/farmers/me/dashboard');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Unable to load your farmer dashboard.');
+  }
+
+  /// Fetches the product listings created by the logged-in farmer
+  static Future<List<Map<String, dynamic>>> getFarmerProducts() async {
+    final response = await authenticatedRequest('/api/v1/products/mine');
+
+    if (response.statusCode == 200) {
+      final List<dynamic> list = jsonDecode(response.body);
+      return list.map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    throw Exception('Unable to load your produce listings.');
+  }
+
+  /// Fetches products available to buyers, optionally filtered by proximity radius (km)
+  static Future<List<Map<String, dynamic>>> getNearbyProducts({
+    double lat = 3.8480,
+    double lon = 11.5021,
+    double radiusKm = 50,
+  }) async {
+    final response = await authenticatedRequest(
+      '/api/v1/products/nearby?latitude=$lat&longitude=$lon&radiusMeters=${radiusKm * 1000}',
     );
 
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      final String accessToken = (data['accessToken'] ?? data['token'] ?? '').toString();
-      final String refreshToken = (data['refreshToken'] ?? '').toString();
-      final String role = (data['role'] ?? 'BUYER').toString();
-      final String? userId = data['userId']?.toString();
-
-      if (accessToken.isEmpty) {
-        throw Exception('Server returned an empty or missing access token.');
-      }
-
-      await _storage.saveSession(
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        role: role,
-        userId: userId,
-      );
-      return data;
-    } else {
-      final errorData = jsonDecode(response.body);
-      throw Exception(errorData['error'] ?? 'Invalid email or password');
+      final List<dynamic> list = jsonDecode(response.body);
+      return list.map((e) => Map<String, dynamic>.from(e)).toList();
     }
+    return [];
   }
-
-  // --- SILENT TOKEN REFRESH ENGINE ---
-  static Future<bool> refreshAccessToken() async {
-    final refreshToken = await _storage.getRefreshToken();
-    if (refreshToken == null || refreshToken.isEmpty) return false;
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/refresh'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
-      );
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        final currentRole = await _storage.getUserRole() ?? 'BUYER';
-        final currentUserId = await _storage.getUserId();
-        final String newAccessToken = (data['accessToken'] ?? data['token'] ?? '').toString();
-        final String newRefreshToken = (data['refreshToken'] ?? refreshToken).toString();
-        if (newAccessToken.isEmpty) return false;
-        await _storage.saveSession(
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken,
-          role: currentRole,
-          userId: currentUserId,
-        );
-        return true;
-      } else {
-        await _storage.clearSession();
-        return false;
-      }
-    } catch (_) {
-      await _storage.clearSession();
-      return false;
-    }
-  }
-
-  // --- AUTHENTICATED WRAPPER WITH AUTOMATIC 401 RETRY ---
-  static Future<http.Response> authenticatedRequest({
-    required String method,
-    required String endpoint,
-    Map<String, dynamic>? body,
-  }) async {
-    String? token = await _storage.getAccessToken();
-    Uri uri = Uri.parse('$baseUrl$endpoint');
-    Map<String, String> headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ${token ?? ""}',
-    };
-    http.Response response = await _sendRequest(method, uri, headers, body);
-    if (response.statusCode == 401) {
-      bool refreshed = await refreshAccessToken();
-      if (refreshed) {
-        token = await _storage.getAccessToken();
-        headers['Authorization'] = 'Bearer ${token ?? ""}';
-        response = await _sendRequest(method, uri, headers, body);
-      }
-    }
-    return response;
-  }
-
-  static Future<http.Response> _sendRequest(
-    String method,
-    Uri uri,
-    Map<String, String> headers,
-    Map<String, dynamic>? body,
-  ) async {
-    switch (method.toUpperCase()) {
-      case 'POST':
-        return await http.post(
-          uri,
-          headers: headers,
-          body: body != null ? jsonEncode(body) : null,
-        );
-      case 'PUT':
-        return await http.put(
-          uri,
-          headers: headers,
-          body: body != null ? jsonEncode(body) : null,
-        );
-      case 'DELETE':
-        return await http.delete(uri, headers: headers);
-      case 'GET':
-      default:
-        return await http.get(uri, headers: headers);
-    }
-  }
-}
+}

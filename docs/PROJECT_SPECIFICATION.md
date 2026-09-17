@@ -54,13 +54,24 @@ To design, develop, and evaluate AgroNexus, an integrated multi-platform agricul
 
 ---
 
-## 5. Scope & Delimitations
+## 5. Scope, Development Stage & Delimitations
 
 ### Scope
 - Multi-platform client implementation using Flutter (targeting Web, Mobile, and Desktop).
 - RESTful backend services using Java Spring Boot 3.x and PostgreSQL with PostGIS + pgvector extensions.
 - Implementation of 7 functional epics: Authentication/Identity, Distance-Filtered Catalog, Sales & Escrow Checkout, Transport Dispatch, Storage Conservation & IoT Telemetry, RAG AI Assistant, and User Self-Service Settings.
 - Hardware simulation and embedded C++ integration using ESP32 nodes over MQTT/HTTP.
+
+### Development Stage & Implementation Milestones
+The system is currently built as a **Working Prototype / MVP Foundation (~39–45% functional completion)**:
+1. **Completed Scaffolding & Foundation (~45%)**: Multi-role JWT authentication, BCrypt password security, Farmer produce listing with PostGIS `Point` storage, Buyer PostGIS radial search (`ST_DWithin`), Escrow Engine calculations (`EscrowEngineService.java`), REST IoT Telemetry Ingestion endpoint, and rule-based AI agricultural prompt guardrails.
+2. **In-Progress / Upcoming Milestones**:
+   - *Milestone 1*: End-to-end Buyer checkout submission to `/api/v1/escrow/order` & Farmer listing management (`/products/my-listings`).
+   - *Milestone 2*: Order delivery state machine (`PENDING` $\rightarrow$ `DELIVERED`) & Transporter logistics dashboard execution.
+   - *Milestone 3*: Mobile Money sandbox payout triggers (85% Farmer / 15% Transporter).
+   - *Milestone 4*: Connecting Farmer Dashboard widgets to live Spring Boot telemetry APIs.
+   - *Milestone 5*: Production RAG vector embeddings ingestion & pgvector top-$k$ similarity queries.
+   - *Milestone 6*: User self-service profile and settings portal.
 
 ### Delimitations
 - **Payments**: Financial payment integration simulates Mobile Money and card transactions via automated sandbox APIs rather than live bank settlement systems.

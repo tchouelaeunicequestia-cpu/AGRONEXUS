@@ -6,19 +6,62 @@ AgroNexus is a comprehensive AgTech ecosystem designed to address post-harvest a
 
 ---
 
+## 📊 Project Implementation Status & Baseline (~39–45%)
+
+The platform is currently in the **Working Prototype / MVP Foundation Stage**:
+
+| Module / Epic | Baseline Implementation Status | Progress |
+|---|---|---:|
+| 🔐 **Auth & Roles (Epic 1)** | Multi-role registration & login (`FARMER`, `BUYER`, `TRANSPORTER`, `AGRONOMIST`, `ADMIN`), JWT access/refresh tokens, BCrypt strength 12. | 60% |
+| 🌽 **Produce Catalog & Spatial (Epic 2)** | PostGIS `Point` produce listings (`ProductController.java`), Buyer `ST_DWithin` radial spatial search (5km–100km). | 65% |
+| 💳 **Escrow & Payments (Epic 3)** | `EscrowEngineService` formula (1.5% MoMo buffer), Order entity, lock/disburse endpoints. Frontend checkout connection pending. | 45% |
+| 🚚 **Transport & Logistics (Epic 4)** | Data model & `EscrowStatus` state enum created. Transporter UI & dispatch execution pending. | 10% |
+| 🌡️ **IoT Storage Telemetry (Epic 5)** | Spring Boot telemetry REST ingestion (`TelemetryController.java`), safety threshold evaluation. UI dashboard seeded fallback data. | 50% |
+| 🤖 **Domain-Guarded AI (Epic 6)** | Keyword-based agricultural prompt guardrail prototype (`AiAssistantController.java`). `pgvector` HNSW index & LLM integration pending. | 35% |
+| 👤 **User Profile & Settings (Epic 7)** | Self-service profile editing and address management pending. | 0% |
+| 🎯 **Overall Completion** | **Working Prototype / MVP Stage** | **~39–45%** |
+
+---
+
 ## 📚 Documentation Index
+
+### 🎓 1. Academic & Project Deliverables
+
+| File | Description |
+| :--- | :--- |
+| 📑 [PROJECT_REPORT.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/PROJECT_REPORT.md) | **Complete Software Engineering & AI Project Report** (Chapters 1–6, Abstract, Declarations, System Architecture, Performance Benchmarks, Appendices). |
+| 📄 [PROJECT_SPECIFICATION.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/PROJECT_SPECIFICATION.md) | Project background, problem statement, research questions, objectives, scope & delimitations. |
+| 📋 [REQUIREMENTS.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/REQUIREMENTS.md) | Functional epics (Epics 1–7), Non-Functional Requirements (NFR1–NFR4), and Requirements Traceability Matrix. |
+
+---
+
+### 🏗️ 2. Technical & Architectural Specifications
+
+| File | Description |
+| :--- | :--- |
+| 🏗️ [SYSTEM_ARCHITECTURE.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/SYSTEM_ARCHITECTURE.md) | Architectural layers, UML use cases, data flow diagrams (DFD Level-1), component models, and RBAC authorization matrix. |
+| 🌐 [API_SPECIFICATION.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/API_SPECIFICATION.md) | Complete REST API endpoints specification, JWT authentication flow, escrow state machine transitions, and DTO contracts. |
+| 🗄️ [DATABASE_SCHEMA.sql](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/DATABASE_SCHEMA.sql) | Production SQL database schema including PostGIS spatial coordinates (`GEOMETRY(Point, 4326)`), pgvector (`vector(1536)`), GiST/HNSW indexes, and constraints. |
+| 🔌 [IOT_HARDWARE_SPECIFICATION.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/IOT_HARDWARE_SPECIFICATION.md) | ESP32 cyber-physical hardware setup, sensor pinouts (DHT22, MQ-135), C++ firmware implementation, and telemetry payload formats. |
+| 🤖 [RAG_AI_PIPELINE.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/RAG_AI_PIPELINE.md) | Domain-guarded RAG AI pipeline, vector embedding ingestion, HNSW cosine search, guardrail execution flow, and FAO/USDA citation rules. |
+
+---
+
+### 🚀 3. Deployment & Cloud Operations
 
 | File | Description |
 | :--- | :--- |
 | 🚀 [DEPLOYMENT_GUIDE.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/deployment/DEPLOYMENT_GUIDE.md) | **Production Cloud Deployment Guide** (Supabase + Render + Vercel/Firebase & Docker Compose). |
 | ⚡ [supabase_setup.sql](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/deployment/supabase_setup.sql) | Production SQL Initialization & Seed Script for Supabase (PostGIS + pgvector). |
-| 📄 [PROJECT_SPECIFICATION.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/PROJECT_SPECIFICATION.md) | Project background, problem statement, research questions, objectives, scope & delimitations. |
-| 🏗️ [SYSTEM_ARCHITECTURE.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/SYSTEM_ARCHITECTURE.md) | Architectural layers, UML use cases, data flow diagrams (DFD Level-1), component models, and RBAC authorization matrix. |
-| 📋 [REQUIREMENTS.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/REQUIREMENTS.md) | Functional epics (Epics 1–7), Non-Functional Requirements (NFR1–NFR4), and Requirements Traceability Matrix. |
-| 🗄️ [DATABASE_SCHEMA.sql](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/DATABASE_SCHEMA.sql) | Production SQL database schema including PostGIS spatial coordinates (`GEOMETRY(Point, 4326)`), pgvector (`vector(1536)`), GiST/HNSW indexes, and constraints. |
-| 🔌 [IOT_HARDWARE_SPECIFICATION.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/IOT_HARDWARE_SPECIFICATION.md) | ESP32 cyber-physical hardware setup, sensor pinouts (DHT22, MQ-135), C++ firmware implementation, and telemetry payload formats. |
-| 🤖 [RAG_AI_PIPELINE.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/RAG_AI_PIPELINE.md) | Domain-guarded RAG AI pipeline, vector embedding ingestion, HNSW cosine search, guardrail execution flow, and FAO/USDA citation rules. |
-| 🌐 [API_SPECIFICATION.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/API_SPECIFICATION.md) | Complete REST API endpoints specification, JWT authentication flow, escrow state machine transitions, and DTO contracts. |
+
+---
+
+### 💻 4. Developer Setup & Troubleshooting
+
+| File | Description |
+| :--- | :--- |
+| ⚙️ [DEVELOPMENT_SETUP_GUIDE.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/DEVELOPMENT_SETUP_GUIDE.md) | Local Flutter hardware setup (`geolocator`, `local_auth`), state management, local Wi-Fi IP configuration, and Gradle offline build troubleshooting. |
+| ☕ [BACKEND_STARTUP_GUIDE.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/BACKEND_STARTUP_GUIDE.md) | Spring Boot 3.x backend startup guide, Maven build steps, and environment setup. |
 
 ---
 
@@ -26,6 +69,6 @@ AgroNexus is a comprehensive AgTech ecosystem designed to address post-harvest a
 
 - **Project Title**: AgroNexus — An Integrated Agricultural Management and Information Platform
 - **Institution**: The ICT University, Yaoundé Campus, Cameroon
-- **Department**: Software Engineering and Artificial Intelligence
+- **Department**: Department of Software Engineering and Artificial Intelligence
 - **Degree**: Bachelor of Science (B.Sc.) in Software Engineering and Artificial Intelligence
-
+- **Presented By**: Eunice Françoise Tchouela Quetsia (Registration No: ICTU20248912)
