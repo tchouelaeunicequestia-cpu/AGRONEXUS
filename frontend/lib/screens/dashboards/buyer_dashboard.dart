@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -31,12 +32,42 @@ class _BuyerDashboardState extends State<BuyerDashboard>
 
   final List<double> _radiusOptions = [5, 15, 25, 50, 100];
   final List<Map<String, dynamic>> _categoryItems = [
-    {'name': 'All Lots', 'value': 'All', 'icon': Icons.apps_rounded, 'color': const Color(0xFF0F172A)},
-    {'name': 'Plantains', 'value': 'PLANTAINS', 'icon': Icons.eco_rounded, 'color': const Color(0xFF059669)},
-    {'name': 'Cereals', 'value': 'CEREALS', 'icon': Icons.grass_rounded, 'color': const Color(0xFFD97706)},
-    {'name': 'Tubers', 'value': 'TUBERS', 'icon': Icons.set_meal_rounded, 'color': const Color(0xFFB45309)},
-    {'name': 'Vegetables', 'value': 'VEGETABLES', 'icon': Icons.local_florist_rounded, 'color': const Color(0xFFEF4444)},
-    {'name': 'Cocoa & Coffee', 'value': 'COCOA', 'icon': Icons.coffee_rounded, 'color': const Color(0xFF78350F)},
+    {
+      'name': 'All Lots',
+      'value': 'All',
+      'icon': Icons.apps_rounded,
+      'color': const Color(0xFF0F172A),
+    },
+    {
+      'name': 'Plantains',
+      'value': 'PLANTAINS',
+      'icon': Icons.eco_rounded,
+      'color': const Color(0xFF059669),
+    },
+    {
+      'name': 'Cereals',
+      'value': 'CEREALS',
+      'icon': Icons.grass_rounded,
+      'color': const Color(0xFFD97706),
+    },
+    {
+      'name': 'Tubers',
+      'value': 'TUBERS',
+      'icon': Icons.set_meal_rounded,
+      'color': const Color(0xFFB45309),
+    },
+    {
+      'name': 'Vegetables',
+      'value': 'VEGETABLES',
+      'icon': Icons.local_florist_rounded,
+      'color': const Color(0xFFEF4444),
+    },
+    {
+      'name': 'Cocoa & Coffee',
+      'value': 'COCOA',
+      'icon': Icons.coffee_rounded,
+      'color': const Color(0xFF78350F),
+    },
   ];
 
   // Kept as design reference; only records returned by the backend are displayed.
@@ -60,8 +91,7 @@ class _BuyerDashboardState extends State<BuyerDashboard>
       'timeAgo': 'Cut 4h ago',
       'spec1': 'Direct Depot Pickup',
       'spec2': 'PostGIS Escrow Lock',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1528825871115-3581a5387919?q=80&w=800&auto=format&fit=crop',
+      'imageUrl': 'https://images.unsplash.com/photo-1528825871115-3581a5387919?q=80&w=800&auto=format&fit=crop',
     },
     {
       'id': 102,
@@ -80,8 +110,7 @@ class _BuyerDashboardState extends State<BuyerDashboard>
       'timeAgo': 'Grade AA',
       'spec1': '18.2°C Cold Chain',
       'spec2': 'Verified Quality AA',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?q=80&w=800&auto=format&fit=crop',
+      'imageUrl': 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?q=80&w=800&auto=format&fit=crop',
     },
     {
       'id': 103,
@@ -100,8 +129,7 @@ class _BuyerDashboardState extends State<BuyerDashboard>
       'timeAgo': 'Locked Buffer',
       'spec1': 'Moisture: 7.1%',
       'spec2': 'Escrow Securitized',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?q=80&w=800&auto=format&fit=crop',
+      'imageUrl': 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?q=80&w=800&auto=format&fit=crop',
     },
     {
       'id': 104,
@@ -120,8 +148,7 @@ class _BuyerDashboardState extends State<BuyerDashboard>
       'timeAgo': 'Yesterday',
       'spec1': 'Direct Root Delivery',
       'spec2': 'Washed & Sorted',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?q=80&w=800&auto=format&fit=crop',
+      'imageUrl': 'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?q=80&w=800&auto=format&fit=crop',
     },
   ];
 
@@ -196,7 +223,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
         'id': p['id'] ?? 0,
         'title': p['title'] ?? 'Produce Harvest Lot',
         'scientificName': p['description'] ?? 'Verified Farm Lot',
-        'farmerName': p['farmer'] != null ? p['farmer']['fullName'] ?? 'Verified Farmer' : 'Farmer #${p['farmerId'] ?? 1}',
+        'farmerName': p['farmer'] != null
+            ? p['farmer']['fullName'] ?? 'Verified Farmer'
+            : 'Farmer #${p['farmerId'] ?? 1}',
         'locationAxis': 'PostGIS Geopositional',
         'category': (p['category'] ?? 'PLANTAINS').toString().toUpperCase(),
         'pricePerUnit': (p['pricePerUnit'] ?? 450).toInt(),
@@ -218,7 +247,8 @@ class _BuyerDashboardState extends State<BuyerDashboard>
         final cat = (item['category'] ?? '').toString().toUpperCase();
         return cat == _selectedCategory ||
             (_selectedCategory == 'PLANTAINS' && cat.contains('PLANT')) ||
-            (_selectedCategory == 'COCOA' && (cat.contains('COCOA') || cat.contains('COFFEE')));
+            (_selectedCategory == 'COCOA' &&
+                (cat.contains('COCOA') || cat.contains('COFFEE')));
       }).toList();
     }
 
@@ -354,11 +384,7 @@ class _BuyerDashboardState extends State<BuyerDashboard>
             const SizedBox(height: 16),
             const Row(
               children: [
-                Icon(
-                  Icons.shield_outlined,
-                  size: 16,
-                  color: Color(0xFF0F5132),
-                ),
+                Icon(Icons.shield_outlined, size: 16, color: Color(0xFF0F5132)),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -407,21 +433,7 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                       ),
                       elevation: 0,
                     ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Escrow Order Locked for ${item['title']}!',
-                          ),
-                          backgroundColor: const Color(0xFF0F5132),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      );
-                    },
+                    onPressed: () => _createEscrowOrder(item),
                     icon: const Icon(Icons.verified_user_rounded, size: 18),
                     label: const Text(
                       'Lock Escrow Order',
@@ -440,8 +452,60 @@ class _BuyerDashboardState extends State<BuyerDashboard>
     );
   }
 
-  Widget _buildModalCostRow(String label, String value,
-      {bool isBold = false, bool isTotal = false}) {
+  Future<void> _createEscrowOrder(Map<String, dynamic> item) async {
+    final buyerId = ApiService.globalUserId;
+    final productId = item['id'];
+    if (buyerId == null || productId is! num) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to identify this buyer or produce listing.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final response = await ApiService.createEscrowOrder(
+        buyerId: buyerId,
+        productId: productId.toInt(),
+        quantity: 1,
+        transportFee: 5000,
+        deliveryAddress: _locationDescription,
+      );
+      if (!mounted) return;
+
+      final order = response['order'] as Map<String, dynamic>;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Order ${order['orderCode']} locked in escrow.'),
+          backgroundColor: const Color(0xFF0F5132),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Unable to lock order: ${e.toString().replaceAll("Exception: ", "")}',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _buildModalCostRow(
+    String label,
+    String value, {
+    bool isBold = false,
+    bool isTotal = false,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -490,10 +554,7 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                   toolbarHeight: 64,
                   bottom: PreferredSize(
                     preferredSize: const Size.fromHeight(1),
-                    child: Container(
-                      color: const Color(0xFFE2E8F0),
-                      height: 1,
-                    ),
+                    child: Container(color: const Color(0xFFE2E8F0), height: 1),
                   ),
                   title: Row(
                     children: [
@@ -610,7 +671,10 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                             decoration: BoxDecoration(
                               color: const Color(0xFFF59E0B),
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 1.5),
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
                             ),
                           ),
                         ),
@@ -625,7 +689,8 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: const Color(0xFF0F5132).withValues(alpha: 0.3),
+                              color: const Color(0xFF0F5132)
+                                  .withValues(alpha: 0.3),
                               width: 2,
                             ),
                           ),
@@ -674,7 +739,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                               decoration: BoxDecoration(
                                 color: const Color(0xFFEFFAF3),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFD7F3E3)),
+                                border: Border.all(
+                                  color: const Color(0xFFD7F3E3),
+                                ),
                               ),
                               child: const Icon(
                                 Icons.explore_rounded,
@@ -718,7 +785,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF8FAFC),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
+                                ),
                               ),
                               child: Row(
                                 children: [
@@ -849,7 +918,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                                         _fetchNearbyProduce();
                                       },
                                       child: AnimatedContainer(
-                                        duration: const Duration(milliseconds: 200),
+                                        duration: const Duration(
+                                          milliseconds: 200,
+                                        ),
                                         padding: const EdgeInsets.symmetric(
                                           vertical: 8,
                                         ),
@@ -857,12 +928,15 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                                           color: isSelected
                                               ? const Color(0xFF0F5132)
                                               : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           boxShadow: isSelected
                                               ? [
                                                   BoxShadow(
-                                                    color: const Color(0xFF0F5132)
-                                                        .withValues(alpha: 0.3),
+                                                    color: const Color(
+                                                      0xFF0F5132,
+                                                    ).withValues(alpha: 0.3),
                                                     blurRadius: 4,
                                                     offset: const Offset(0, 2),
                                                   ),
@@ -945,7 +1019,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
+                                ),
                               ),
                               child: TextField(
                                 controller: _searchController,
@@ -968,8 +1044,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                                     size: 20,
                                   ),
                                   border: InputBorder.none,
-                                  contentPadding:
-                                      EdgeInsets.symmetric(vertical: 12),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
                                 ),
                               ),
                             ),
@@ -981,7 +1058,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                             decoration: BoxDecoration(
                               color: const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: IconButton(
                               icon: const Icon(
@@ -1004,13 +1083,16 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                           itemCount: _categoryItems.length,
                           itemBuilder: (context, index) {
                             final cat = _categoryItems[index];
-                            final isSelected = _selectedCategory == cat['value'];
+                            final isSelected =
+                                _selectedCategory == cat['value'];
 
                             return Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: InkWell(
                                 onTap: () {
-                                  setState(() => _selectedCategory = cat['value']);
+                                  setState(
+                                    () => _selectedCategory = cat['value'],
+                                  );
                                   _fetchNearbyProduce();
                                 },
                                 borderRadius: BorderRadius.circular(20),
@@ -1098,7 +1180,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: const Row(
                               children: [
@@ -1134,23 +1218,23 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                               ),
                             )
                           : _displayLots.isEmpty
-                              ? Container(
-                                  padding: const EdgeInsets.all(40),
-                                  alignment: Alignment.center,
-                                  child: const Text(
-                                    'No active produce lots match your current filters.',
-                                    style: TextStyle(color: Color(0xFF64748B)),
-                                  ),
-                                )
-                              : ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: _displayLots.length,
-                                  itemBuilder: (context, index) {
-                                    final item = _displayLots[index];
-                                    return _buildHarvestCard(item);
-                                  },
-                                ),
+                          ? Container(
+                              padding: const EdgeInsets.all(40),
+                              alignment: Alignment.center,
+                              child: const Text(
+                                'No active produce lots match your current filters.',
+                                style: TextStyle(color: Color(0xFF64748B)),
+                              ),
+                            )
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _displayLots.length,
+                              itemBuilder: (context, index) {
+                                final item = _displayLots[index];
+                                return _buildHarvestCard(item);
+                              },
+                            ),
                     ]),
                   ),
                 ),
@@ -1170,9 +1254,7 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F172A).withValues(alpha: 0.94),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFF1E293B),
-                  ),
+                  border: Border.all(color: const Color(0xFF1E293B)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.25),
@@ -1342,7 +1424,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
             child: Icon(
               icon,
               size: 20,
-              color: isActive ? const Color(0xFF0F5132) : const Color(0xFF64748B),
+              color: isActive
+                  ? const Color(0xFF0F5132)
+                  : const Color(0xFF64748B),
             ),
           ),
           const SizedBox(height: 2),
@@ -1351,7 +1435,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
             style: TextStyle(
               fontSize: 11,
               fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-              color: isActive ? const Color(0xFF0F5132) : const Color(0xFF64748B),
+              color: isActive
+                  ? const Color(0xFF0F5132)
+                  : const Color(0xFF64748B),
             ),
           ),
         ],
@@ -1380,7 +1466,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
           Stack(
             children: [
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(19),
+                ),
                 child: AspectRatio(
                   aspectRatio: 16 / 10,
                   child: Image.network(
@@ -1401,8 +1489,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(19)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(19),
+                    ),
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -1419,7 +1508,10 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                 top: 12,
                 left: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF0F172A).withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(20),
@@ -1448,7 +1540,10 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                 top: 12,
                 right: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(20),
@@ -1478,7 +1573,10 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                 right: 12,
                 bottom: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF0F172A).withValues(alpha: 0.75),
                     borderRadius: BorderRadius.circular(12),

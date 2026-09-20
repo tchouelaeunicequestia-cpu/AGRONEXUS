@@ -18,6 +18,7 @@ C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\ent
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\entity\Role.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\entity\TelemetryLog.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\entity\User.java
+C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\entity\VerificationChallenge.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\model\EscrowTransaction.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\repository\EscrowRepository.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\repository\OrderRepository.java
@@ -25,7 +26,9 @@ C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\rep
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\repository\RefreshTokenRepository.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\repository\TelemetryLogRepository.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\repository\UserRepository.java
+C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\repository\VerificationChallengeRepository.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\security\JwtAuthFilter.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\security\JwtService.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\security\SecurityConfig.java
 C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\service\EscrowEngineService.java
+C:\Users\lenovo p14s\Music\AGRONEXUS\backend\src\main\java\com\agronexus\api\service\VerificationService.java

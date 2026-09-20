@@ -42,6 +42,21 @@ public class User {
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
+    @Column(name = "national_id_hash", length = 128)
+    private String nationalIdHash;
+
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified;
+
+    @Column(name = "phone_verified", nullable = false)
+    private Boolean phoneVerified;
+
+    @Column(name = "identity_verified", nullable = false)
+    private Boolean identityVerified;
+
+    @Column(name = "biometric_verified", nullable = false)
+    private Boolean biometricVerified;
+
     @Column(name = "is_verified")
     private Boolean isVerified;
 
@@ -59,8 +74,12 @@ public class User {
         createdAt = ZonedDateTime.now();
         updatedAt = ZonedDateTime.now();
         if (isVerified == null) {
-            isVerified = true;
+            isVerified = false;
         }
+        if (emailVerified == null) emailVerified = false;
+        if (phoneVerified == null) phoneVerified = false;
+        if (identityVerified == null) identityVerified = false;
+        if (biometricVerified == null) biometricVerified = false;
     }
 
     @PreUpdate

@@ -20,6 +20,33 @@ Before running the backend, ensure the following are installed on your machine:
 
 ---
 
+## 🔐 Registration Verification Configuration
+
+Registration creates a pending account and starts separate email and phone verification challenges. Configure delivery before enabling the flow:
+
+```powershell
+$env:VERIFICATION_DELIVERY_MODE = "disabled" # fail-closed default
+```
+
+Supported modes are:
+
+* `disabled`: no code is delivered; use this default when a provider is not configured.
+* `console`: prints development codes to the backend logs; local development only.
+* A production provider mode can be added when email/SMS credentials and an adapter are configured.
+
+OTP codes expire after ten minutes, are single-use, and allow five attempts. National identity numbers are hashed before persistence. Account activation remains blocked until the required email, phone, identity, and biometric verification states are complete. Web biometric checks and unavailable desktop GPS/biometric providers fail closed rather than simulating success.
+
+Start the backend with the chosen mode:
+
+```powershell
+$env:VERIFICATION_DELIVERY_MODE = "console"
+mvn spring-boot:run
+```
+
+Do not commit provider credentials, database passwords, JWT secrets, or development OTPs to this document or the repository.
+
+---
+
 ## 📂 Backend Folder Structure
 
 ```
@@ -285,4 +312,3 @@ agronexus:
 | 7 | **Frontend Checkout Connection** | ⏳ Active Next Step | Connect Flutter produce order screen to `/api/v1/escrow/order`. |
 | 8 | **Transporter Workflow Execution** | ⏳ Active Next Step | Build Transporter dashboard UI & order state machine transitions (`PENDING` $\rightarrow$ `DELIVERED`). |
 | 9 | **Vector RAG Pipeline** | ⏳ Active Next Step | Ingest FAO/USDA documents into `pgvector` for LLM top-$k$ similarity queries. |
-

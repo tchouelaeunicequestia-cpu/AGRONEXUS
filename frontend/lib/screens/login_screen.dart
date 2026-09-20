@@ -1,5 +1,7 @@
+// lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../services/auth_provider.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
@@ -12,13 +14,14 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
-  bool _keepSessionActive = true; // Now interactive state
+  bool _keepSessionActive = true;
 
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
@@ -31,11 +34,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
-    _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.04),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        );
 
     _animController.forward();
   }
@@ -66,12 +72,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             children: [
               Icon(Icons.check_circle_rounded, color: Colors.white),
               SizedBox(width: 12),
-              Text('Welcome back to AgroNexus!', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Welcome back to AgroNexus!',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           backgroundColor: const Color(0xFF0f5132),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -82,12 +93,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       showDialog(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: const Row(
             children: [
               Icon(Icons.error_outline_rounded, color: AppTheme.errorRed),
               SizedBox(width: 10),
-              Text('Authentication Failed', style: TextStyle(fontWeight: FontWeight.bold)),
+              Flexible(
+                child: Text(
+                  'Authentication Failed',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           content: Text(
@@ -99,7 +118,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0f5132),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Try Again'),
@@ -126,57 +147,79 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 // Top App Navigation / Header Bar
                 Container(
                   color: Colors.white.withValues(alpha: 0.9),
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 12.0,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Row(
                           children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF16a34a),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(Icons.eco_rounded, color: Colors.white, size: 20),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'AgroNexus',
-                                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0f172a)),
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF16a34a),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              Text(
-                                'Identity & RBAC Access Gateway',
-                                style: TextStyle(fontSize: 11, color: Color(0xFF64748b), fontWeight: FontWeight.w500),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              child: const Icon(
+                                Icons.eco_rounded,
+                                color: Colors.white,
+                                size: 20,
                               ),
-                            ],
                             ),
-                          ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'AgroNexus',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 18,
+                                      color: Color(0xFF0f172a),
+                                    ),
+                                  ),
+                                  Text(
+                                    'Identity & RBAC Access Gateway',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFF64748b),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       Flexible(
                         child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFdcf4e1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFb8e7c8)),
-                        ),
-                        child: const Text(
-                          'BEAC / CEMAC Ready',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF006c49)),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFdcf4e1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFb8e7c8)),
+                          ),
+                          child: const Text(
+                            'BEAC / CEMAC Ready',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF006c49),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
                     ],
@@ -208,11 +251,22 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             builder: (context, boxConstraints) {
                               final isWide = boxConstraints.maxWidth > 850;
                               if (isWide) {
-                                return Row(
-                                  children: [
-                                    Expanded(flex: 5, child: _buildLeftTeaserPanel()),
-                                    Expanded(flex: 7, child: _buildRightLoginForm(isDesktop: true)),
-                                  ],
+                                return IntrinsicHeight(
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      Expanded(
+                                        flex: 5,
+                                        child: _buildLeftTeaserPanel(),
+                                      ),
+                                      Expanded(
+                                        flex: 7,
+                                        child: _buildRightLoginForm(
+                                          isDesktop: true,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 );
                               } else {
                                 return Column(
@@ -230,20 +284,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   ),
                 ),
 
-                // Global Footer
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(top: BorderSide(color: Color(0xFFe2e8f0))),
-                  ),
-                  child: const Text(
-                    'AgroNexus Ecosystem • Designed for The ICT University B.Sc. Software Engineering & AI Thesis Protocol',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF64748b)),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
               ],
             ),
           ),
@@ -261,7 +301,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           ),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            Colors.black.withValues(alpha: 0.75),
+            Colors.black.withValues(alpha: 0.45),
             BlendMode.darken,
           ),
         ),
@@ -275,30 +315,58 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFF4ade80), shape: BoxShape.circle)),
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4ade80),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    const Text('Central African AgTech Mesh', style: TextStyle(color: Color(0xFF6cf8bb), fontSize: 11, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Central African AgTech Mesh',
+                      style: TextStyle(
+                        color: Color(0xFF6cf8bb),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
               const Text(
                 'Connecting Farms, Escrow & IoT in One Unified Hub',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white, height: 1.2),
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  height: 1.2,
+                ),
               ),
               const SizedBox(height: 12),
               const Text(
                 'Role-based authentication providing smallholders, off-takers, transporters, and agronomists with verified trust pipelines.',
-                style: TextStyle(fontSize: 13, color: Color(0xFFe2e8f0), height: 1.5),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFFe2e8f0),
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 24),
               _buildFeatureHighlightCard(
@@ -324,13 +392,27 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           Container(
             padding: const EdgeInsets.only(top: 16),
             decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.15))),
+              border: Border(
+                top: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+              ),
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: const Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              runSpacing: 6,
               children: [
-                Text('Backend: Spring Boot 3.3 · Java 21', style: TextStyle(fontSize: 11, color: Color(0xFFcbd5e1))),
-                Text('v4.2.0 Release', style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFF4ade80), fontWeight: FontWeight.bold)),
+                Text(
+                  'Backend: Spring Boot 3.3 · Java 21',
+                  style: TextStyle(fontSize: 11, color: Color(0xFFcbd5e1)),
+                ),
+                Text(
+                  'v4.2.0 Release',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    color: Color(0xFF4ade80),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ),
@@ -339,7 +421,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildFeatureHighlightCard({required IconData icon, required String title, required String description}) {
+  Widget _buildFeatureHighlightCard({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -363,9 +449,24 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(description, style: const TextStyle(fontSize: 11, color: Color(0xFFcbd5e1), height: 1.3)),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFFcbd5e1),
+                    height: 1.3,
+                  ),
+                ),
               ],
             ),
           ),
@@ -385,94 +486,152 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Sign In', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF1e293b))),
-                    SizedBox(height: 4),
-                    Text('Access your verified AgroNexus workspace', style: TextStyle(fontSize: 12, color: Color(0xFF64748b))),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFf8fafc),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFe2e8f0)),
-                  ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('SYSTEM NODE', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF64748b))),
-                      Text('Centre Region Hub', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0f5132))),
+                      Text(
+                        'Sign In',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1e293b),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Access your verified AgroNexus workspace',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748b),
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFf8fafc),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFe2e8f0)),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'SYSTEM NODE',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF64748b),
+                          ),
+                        ),
+                        Text(
+                          'Centre Region Hub',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0f5132),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-
-            // Email Field (Blank and ready for secure input)
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
                 labelText: 'Registered Email Address',
                 hintText: 'e.g. farmer@agronexus.io',
-                prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF64748b)),
+                prefixIcon: Icon(
+                  Icons.email_outlined,
+                  color: Color(0xFF64748b),
+                ),
               ),
               validator: (v) => v!.isEmpty ? 'Email is required' : null,
             ),
             const SizedBox(height: 16),
-
-            // Password Field (Blank and ready for secure input)
             TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
               decoration: InputDecoration(
                 labelText: 'Password',
                 hintText: '••••••••',
-                prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF64748b)),
+                prefixIcon: const Icon(
+                  Icons.lock_outline_rounded,
+                  color: Color(0xFF64748b),
+                ),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    _obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
                     color: const Color(0xFF64748b),
                   ),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
               validator: (v) => v!.isEmpty ? 'Password is required' : null,
             ),
             const SizedBox(height: 16),
-
-            // Interactive Checkbox for Session State
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Checkbox(
                       value: _keepSessionActive,
-                      onChanged: (val) => setState(() => _keepSessionActive = val ?? true),
+                      onChanged: (val) =>
+                          setState(() => _keepSessionActive = val ?? true),
                       activeColor: const Color(0xFF0f5132),
                     ),
-                    const Text('Keep session active (24h JWT)', style: TextStyle(fontSize: 11, color: Color(0xFF64748b), fontWeight: FontWeight.w500)),
+                    const Text(
+                      'Keep session active (24h JWT)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF475569),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
                 const Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.fingerprint, size: 15, color: Color(0xFF16a34a)),
+                    Icon(Icons.fingerprint, size: 16, color: Color(0xFF16a34a)),
                     SizedBox(width: 4),
-                    Text('Use Face-ID', style: TextStyle(fontSize: 11, color: Color(0xFF16a34a), fontWeight: FontWeight.bold)),
+                    Text(
+                      'Use Face-ID',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF16a34a),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
             const SizedBox(height: 24),
-
-            // Submit Button
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -480,7 +639,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0f5132),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 4,
                 ),
                 onPressed: _isLoading ? null : _submitLogin,
@@ -488,12 +649,21 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     ? const SizedBox(
                         width: 22,
                         height: 22,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
                       )
                     : const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Sign In to Account', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          Text(
+                            'Sign In to Account',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           SizedBox(width: 8),
                           Icon(Icons.arrow_forward_rounded, size: 16),
                         ],
@@ -501,26 +671,33 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               ),
             ),
             const SizedBox(height: 20),
-
-            // Register Link
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Don\'t have an account?', style: TextStyle(color: Color(0xFF64748b), fontSize: 11)),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
-                  },
-                  child: const Text(
-                    'Register New Role',
-                    style: TextStyle(
-                      color: Color(0xFF0f5132),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
+            Center(
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  const Text(
+                    'Don\'t have an account?',
+                    style: TextStyle(color: Color(0xFF475569), fontSize: 12),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                      );
+                    },
+                    child: const Text(
+                      'Register New Role',
+                      style: TextStyle(
+                        color: Color(0xFF0f5132),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),

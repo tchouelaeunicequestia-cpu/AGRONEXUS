@@ -16,15 +16,43 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.agronexus.api.model.EscrowTransaction;
 import com.agronexus.api.repository.EscrowRepository;
+import com.agronexus.api.service.EscrowEngineService;
 
 @RestController
 @RequestMapping("/api/v1/escrow")
 public class EscrowController {
 
     private final EscrowRepository escrowRepository;
+    private final EscrowEngineService escrowEngineService;
 
-    public EscrowController(EscrowRepository escrowRepository) {
+    public EscrowController(EscrowRepository escrowRepository, EscrowEngineService escrowEngineService) {
         this.escrowRepository = escrowRepository;
+        this.escrowEngineService = escrowEngineService;
+    }
+
+    @PostMapping("/order")
+    @PreAuthorize("hasAnyRole('BUYER', 'ADMIN')")
+    public ResponseEntity<?> createEscrowOrder(@RequestBody Map<String, Object> payload) {
+        try {
+            Long buyerId = ((Number) payload.get("buyerId")).longValue();
+            Long productId = ((Number) payload.get("productId")).longValue();
+            Double quantity = ((Number) payload.get("quantity")).doubleValue();
+            BigDecimal transportFee = payload.get("transportFee") == null
+                    ? null
+                    : new BigDecimal(payload.get("transportFee").toString());
+            Boolean isSelfPickup = payload.get("isSelfPickup") == null
+                    ? Boolean.FALSE
+                    : Boolean.valueOf(payload.get("isSelfPickup").toString());
+            String deliveryAddress = (String) payload.get("deliveryAddress");
+
+            return ResponseEntity.status(201).body(escrowEngineService.createEscrowOrder(
+                    buyerId, productId, quantity, transportFee, isSelfPickup, deliveryAddress));
+        } catch (NullPointerException | ClassCastException | NumberFormatException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "buyerId, productId, and quantity are required and must be valid."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/initialize")
