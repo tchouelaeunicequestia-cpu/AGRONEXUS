@@ -61,7 +61,11 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> approveUser(@PathVariable Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User account not found"));
-        user.setIsVerified(true);
+        user.setIdentityVerified(true);
+        user.setIsVerified(Boolean.TRUE.equals(user.getEmailVerified())
+                && Boolean.TRUE.equals(user.getPhoneVerified())
+                && Boolean.TRUE.equals(user.getIdentityVerified())
+                && Boolean.TRUE.equals(user.getBiometricVerified()));
         return ResponseEntity.ok(toSafeUserPayload(userRepository.save(user)));
     }
 

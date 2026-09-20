@@ -51,10 +51,20 @@ public class EscrowEngineService {
     @Transactional
     public Map<String, Object> createEscrowOrder(Long buyerId, Long productId, Double quantity, 
                                                 BigDecimal transportFee, Boolean isSelfPickup, String deliveryAddress) {
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than zero.");
+        }
+        if (transportFee != null && transportFee.signum() < 0) {
+            throw new IllegalArgumentException("Transport fee cannot be negative.");
+        }
+
         User buyer = userRepository.findById(buyerId)
                 .orElseThrow(() -> new RuntimeException("Buyer not found"));
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+        if (product.getAvailableQuantity() < quantity) {
+            throw new IllegalArgumentException("Requested quantity exceeds available produce.");
+        }
         User farmer = product.getFarmer();
 
         boolean selfPickup = (isSelfPickup != null && isSelfPickup);
@@ -82,7 +92,7 @@ public class EscrowEngineService {
                 .transportFee(freight)
                 .depositBuffer(depositBuffer)
                 .totalEscrowAmount(totalEscrow)
-                .escrowStatus(selfPickup ? EscrowStatus.READY_FOR_PICKUP : EscrowStatus.HELD_IN_ESCROW)
+                .escrowStatus(EscrowStatus.HELD_IN_ESCROW)
                 .deliveryAddress(deliveryAddress)
                 .build();
 

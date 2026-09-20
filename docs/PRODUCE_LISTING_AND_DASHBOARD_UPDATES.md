@@ -120,3 +120,15 @@ Created a native web and cross-platform image service:
   No issues found! (ran in 3.2s)
   ```
 * All code compiles cleanly with zero warnings or errors.
+
+## Registration Verification Status
+The registration flow now distinguishes identity evidence from account creation:
+
+* Name, email, phone, national ID, and password are validated on both Flutter and Spring Boot.
+* Email and phone ownership use separate expiring, single-use OTP challenges with BCrypt-hashed codes, five-attempt limits, and resend support.
+* National identity numbers are hashed with SHA-256 before persistence; raw values are not stored.
+* `emailVerified`, `phoneVerified`, `identityVerified`, and `biometricVerified` are tracked independently. Account activation requires the required checks to be complete.
+* Unsupported web biometrics and unavailable desktop biometric/GPS providers fail closed instead of returning simulated success or a fixed location.
+* Verification delivery is disabled by default and must be configured with `VERIFICATION_DELIVERY_MODE`; console delivery is for local development only. A production email/SMS provider and external KYC/liveness provider remain integration work.
+
+This document is retained as the feature-status and verification-history record for the dashboard and produce workflows.

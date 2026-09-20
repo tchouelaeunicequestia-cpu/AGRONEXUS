@@ -3,10 +3,11 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'api_constants.dart' as api_constants;
 import 'secure_storage_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8080';
+  static String get baseUrl => api_constants.baseUrl;
 
   // Global token references used by auth provider and dashboards
   static String? globalAccessToken;
@@ -55,6 +56,9 @@ class ApiService {
     required String name,
     required String email,
     required String password,
+    required String phoneNumber,
+    required String nationalId,
+    required bool biometricVerified,
     required String role,
     double? latitude,
     double? longitude,
@@ -66,6 +70,9 @@ class ApiService {
         'fullName': name,
         'email': email,
         'password': password,
+        'phoneNumber': phoneNumber,
+        'nationalId': nationalId,
+        'biometricVerified': biometricVerified,
         'role': role,
         'latitude': latitude ?? 3.8480,
         'longitude': longitude ?? 11.5021,
@@ -77,6 +84,21 @@ class ApiService {
       final errorBody = jsonDecode(response.body);
       throw Exception(errorBody['error'] ?? 'Registration failed.');
     }
+  }
+
+  static Future<Map<String, dynamic>> verifyRegistrationCode({
+    required String email,
+    required String channel,
+    required String code,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/auth/verify'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'channel': channel, 'code': code}),
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200) return Map<String, dynamic>.from(data);
+    throw Exception(data['error'] ?? 'Verification failed.');
   }
 
   /// Generic authenticated HTTP request wrapper with proper positional endpoint and named options
@@ -253,5 +275,35 @@ class ApiService {
       'odometer': '142 km',
       'jobs': 2,
     };
+  }
+
+  /// Creates the order record and locks its calculated amount in escrow.
+  static Future<Map<String, dynamic>> createEscrowOrder({
+    required int buyerId,
+    required int productId,
+    required double quantity,
+    double? transportFee,
+    bool isSelfPickup = false,
+    String? deliveryAddress,
+  }) async {
+    final response = await authenticatedRequest(
+      '/api/v1/escrow/order',
+      method: 'POST',
+      body: {
+        'buyerId': buyerId,
+        'productId': productId,
+        'quantity': quantity,
+        'transportFee': transportFee,
+        'isSelfPickup': isSelfPickup,
+        'deliveryAddress': deliveryAddress,
+      },
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    }
+    final errorBody = jsonDecode(response.body);
+    throw Exception(
+      errorBody['error'] ?? 'Unable to create the escrow order.',
+    );
   }
 }

@@ -75,46 +75,29 @@ class WebLocationService implements LocationService {
 class DesktopLocationService implements LocationService {
   @override
   Future<PositionData> getCurrentLocation() async {
-    try {
-      // 1. Check if Windows Location Services are enabled
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception(
-          'Windows Location Services are disabled in PC Settings.',
-        );
-      }
-
-      // 2. Check and request permissions on Windows
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception('Windows Location Permission denied.');
-        }
-      }
-
-      // 3. Query actual live position on Windows
-      Position pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
-
-      return PositionData(
-        latitude: pos.latitude,
-        longitude: pos.longitude,
-        description:
-            'Windows Live GPS (${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)})',
-      );
-    } catch (e) {
-      // Fallback if Windows privacy or hardware blocks live location access
-      return PositionData(
-        latitude: 4.0511, // Douala Hub
-        longitude: 9.7679,
-        description: 'Desktop Fixed Hub (Douala, SRID: 4326)',
-      );
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      throw Exception('Windows Location Services are disabled in PC Settings.');
     }
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      throw Exception('Windows Location Permission denied.');
+    }
+    final pos = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 10),
+      ),
+    );
+    return PositionData(
+      latitude: pos.latitude,
+      longitude: pos.longitude,
+      description:
+          'Windows Live GPS (${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)})',
+    );
   }
 }
 
@@ -155,8 +138,10 @@ class AndroidIdentityService implements IdentityService {
 class WebIdentityService implements IdentityService {
   @override
   Future<bool> verifyFaceOrBiometric() async {
-    await Future.delayed(const Duration(seconds: 1));
-    return true;
+    throw Exception(
+      'Live identity verification is not available in this browser. '
+      'Use the mobile app or configure a liveness verification provider.',
+    );
   }
 }
 
@@ -175,9 +160,12 @@ class DesktopIdentityService implements IdentityService {
               'Verify identity via Windows Hello / Biometric sensor.',
         );
       }
-    } catch (_) {}
-    await Future.delayed(const Duration(seconds: 1));
-    return true;
+    } catch (e) {
+      throw Exception('Windows biometric verification failed: $e');
+    }
+    throw Exception(
+      'A supported Windows Hello biometric sensor is required for identity verification.',
+    );
   }
 }
 

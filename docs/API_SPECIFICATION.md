@@ -21,15 +21,52 @@ Content-Type: application/json
 
 #### `POST /api/v1/auth/register`
 - **Access**: Public
-- **Description**: Registers a new user account with role selection (`FARMER`, `BUYER`, `TRANSPORTER`, `AGRONOMIST`, `ADMIN`).
+- **Description**: Validates and creates a pending user account, stores only a hash of the national ID, records biometric evidence status, and issues email and phone verification challenges.
+- **Request Body**:
+```json
+{
+  "fullName": "Eunice Tchouela",
+  "email": "user@example.com",
+  "password": "StrongPassword123",
+  "phoneNumber": "+237600000000",
+  "nationalId": "CNI-123456",
+  "biometricVerified": true,
+  "role": "FARMER",
+  "latitude": 3.848,
+  "longitude": 11.5021
+}
+```
 
 #### `POST /api/v1/auth/login`
 - **Access**: Public
 - **Description**: Authenticates user credentials and returns JWT access token & refresh token.
 
-#### `POST /api/v1/auth/refresh-token`
+#### `POST /api/v1/auth/refresh`
 - **Access**: Public
 - **Description**: Exchanges a valid refresh token for a new JWT access token.
+
+#### `POST /api/v1/auth/verify`
+- **Access**: Public
+- **Description**: Verifies one email or phone OTP. Codes expire after ten minutes, are single-use, and are limited to five attempts.
+- **Request Body**:
+```json
+{
+  "email": "user@example.com",
+  "channel": "EMAIL",
+  "code": "123456"
+}
+```
+
+#### `POST /api/v1/auth/resend-verification`
+- **Access**: Public
+- **Description**: Issues a replacement email or phone verification challenge. Production delivery requires a configured email/SMS provider.
+- **Request Body**:
+```json
+{
+  "email": "user@example.com",
+  "channel": "PHONE"
+}
+```
 
 ---
 

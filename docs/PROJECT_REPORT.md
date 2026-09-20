@@ -347,6 +347,11 @@ The AgroNexus platform functional requirements are categorized across seven core
 - **FR1.1**: System shall support multi-role registration (Farmer, Buyer, Transporter, Agronomist, Admin).
 - **FR1.2**: System shall enforce JWT-based stateless authentication with token refresh mechanics.
 - **FR1.3**: System shall verify administrative identity credentials prior to role elevation.
+- **FR1.4**: System shall validate legal name, email, international phone number, national identity number, and password format on both the client and server.
+- **FR1.5**: System shall verify ownership of the submitted email address and phone number using separate, expiring, single-use OTP challenges.
+- **FR1.6**: System shall maintain separate email, phone, identity, and biometric verification states and shall not activate an account before the required checks are complete.
+- **FR1.7**: The system shall store only a cryptographic hash of the national identity number and shall never persist the raw value.
+- **FR1.8**: Biometric and GPS verification shall fail closed when a supported sensor, permission, or live verification provider is unavailable; simulated success and fixed-location fallbacks are prohibited.
 
 ##### Epic 2: Spatial Produce Catalog & Discovery
 - **FR2.1**: Farmers shall be able to list produce items with spatial coordinates, pricing, and batch availability.
@@ -431,7 +436,21 @@ The backend is structured around domain-driven micro-modules engineered with RES
 ST_DWithin(location, ST_MakePoint(lon, lat)::geography, radius_meters)
 ```
 
-#### 4.1.2 Escrow Business Logic Implementation
+#### 4.1.2 Registration Information Verification
+
+The registration workflow is designed to distinguish between information that is merely supplied by a user and information that has been independently verified. The Flutter registration screen performs immediate format checks for the legal name, email, phone number, national identity number, and password. The Spring Boot API repeats these checks server-side so that client-side validation cannot be bypassed.
+
+After registration, the backend creates separate email and phone verification challenges. Each challenge is stored with a BCrypt hash, expires after ten minutes, is single-use, and is limited to five attempts. The frontend collects both OTPs through a dedicated verification dialog, while the API exposes the following public endpoints:
+
+- `POST /api/v1/auth/register` — creates a pending account and issues contact verification challenges.
+- `POST /api/v1/auth/verify` — verifies an email or phone OTP.
+- `POST /api/v1/auth/resend-verification` — requests a replacement challenge.
+
+The `User` entity tracks `emailVerified`, `phoneVerified`, `identityVerified`, `biometricVerified`, and the final `isVerified` state independently. A national identity number is converted to a SHA-256 hash before persistence. This allows identity matching workflows without retaining the original identifier in the application database.
+
+Biometric verification is explicitly fail-closed. Web registration does not claim success without a configured liveness provider, desktop registration requires a supported Windows Hello or biometric sensor, and location capture reports an error when live permission or GPS data is unavailable instead of substituting a fixed coordinate. In production, `VERIFICATION_DELIVERY_MODE` must be connected to an approved email/SMS provider; disabled delivery is rejected rather than presenting a false verification experience.
+
+#### 4.1.3 Escrow Business Logic Implementation
 The core transactional pipeline enforces strict atomic state machine transitions:
 1. **Order Creation**: Buyer initiates purchase $\rightarrow$ funds lock in `ESCROW_HELD` state.
 2. **Dispatch & Tracking**: Transporter accepts freight assignment $\rightarrow$ status transitions to `IN_TRANSIT`.

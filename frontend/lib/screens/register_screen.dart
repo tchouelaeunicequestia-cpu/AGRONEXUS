@@ -1,3 +1,4 @@
+// lib/screens/register_screen.dart
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
@@ -10,7 +11,8 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin {
+class _RegisterScreenState extends State<RegisterScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -18,7 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   final _cniController = TextEditingController();
   final _phoneController = TextEditingController();
 
-  String _selectedRole = 'FARMER';
+  String? _selectedRole;
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _isLocationCaptured = false;
@@ -27,33 +29,39 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   double? _lon;
 
   late AnimationController _animController;
+  late AnimationController _pulseController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late Animation<double> _pulseAnim;
 
   final List<Map<String, dynamic>> _roles = [
     {
       'value': 'FARMER',
       'label': 'Farmer',
-      'desc': 'Producer / Yield Host',
+      'desc': 'Producer / Yield',
       'icon': Icons.agriculture_rounded,
+      'color': const Color(0xFF10B981),
     },
     {
       'value': 'BUYER',
       'label': 'Buyer',
       'desc': 'Off-taker / Wholesale',
       'icon': Icons.shopping_bag_outlined,
+      'color': const Color(0xFF3B82F6),
     },
     {
       'value': 'TRANSPORTER',
       'label': 'Transporter',
-      'desc': 'Fleet & Cold-Chain',
+      'desc': 'Fleet & Hauler',
       'icon': Icons.local_shipping_outlined,
+      'color': const Color(0xFFF59E0B),
     },
     {
       'value': 'AGRONOMIST',
       'label': 'Agronomist',
-      'desc': 'Soil & Crop Auditor',
+      'desc': 'Soil & Auditor',
       'icon': Icons.psychology_outlined,
+      'color': const Color(0xFF8B5CF6),
     },
   ];
 
@@ -64,12 +72,21 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
-    _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.04),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
-
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        );
+    _pulseAnim = Tween<double>(begin: 0.7, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
     _animController.forward();
   }
 
@@ -81,20 +98,77 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     _cniController.dispose();
     _phoneController.dispose();
     _animController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
-  double get _completionProgress {
-    double progress = 0.33;
-    if (_isFaceScanned) progress += 0.34;
-    if (_nameController.text.isNotEmpty && _emailController.text.isNotEmpty) progress += 0.33;
-    return progress > 1.0 ? 1.0 : progress;
+  static const int _totalSteps = 4;
+
+  bool get _isRoleSelected => _selectedRole != null;
+
+  bool get _isPersonalDetailsComplete =>
+      _validName(_nameController.text) == null &&
+      _validCni(_cniController.text) == null &&
+      _validPhone(_phoneController.text) == null &&
+      _validEmail(_emailController.text) == null &&
+      _validPassword(_passwordController.text) == null;
+
+  String? _validName(String value) =>
+      value.trim().length < 2 ? 'Enter your full legal name' : null;
+
+  String? _validEmail(String value) {
+    final email = value.trim();
+    return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)
+        ? null
+        : 'Enter a valid email address';
+  }
+
+  String? _validPhone(String value) {
+    final phone = value.trim();
+    return RegExp(r'^\+?[1-9]\d{7,14}$').hasMatch(phone)
+        ? null
+        : 'Use an international phone format, e.g. +237...';
+  }
+
+  String? _validCni(String value) =>
+      value.trim().length < 5 ? 'Enter a valid national ID number' : null;
+
+  String? _validPassword(String? rawValue) {
+    final value = rawValue ?? '';
+    if (value.length < 10) return 'Use at least 10 characters';
+    if (!RegExp(r'[A-Z]').hasMatch(value) ||
+        !RegExp(r'[a-z]').hasMatch(value) ||
+        !RegExp(r'[0-9]').hasMatch(value)) {
+      return 'Use upper, lower, and numeric characters';
+    }
+    return null;
+  }
+
+  int get _completedSteps {
+    var completed = 0;
+    if (_isRoleSelected) completed++;
+    if (_isPersonalDetailsComplete) completed++;
+    if (_isFaceScanned) completed++;
+    if (_isLocationCaptured) completed++;
+    return completed;
+  }
+
+  double get _completionProgress => _completedSteps / _totalSteps;
+
+  String get _currentStageLabel {
+    if (_completedSteps == _totalSteps) return 'All Steps Complete';
+    if (!_isRoleSelected) return 'Choose Your Role';
+    if (!_isFaceScanned) return 'Biometric Verification';
+    if (!_isLocationCaptured) return 'Location Capture';
+    return 'Personal Details';
   }
 
   Future<void> _handleBiometricScan() async {
     bool isScanning = false;
-    bool scanComplete = false;
-    String statusMessage = 'Position your face inside the biometric verification frame.';
+    bool scanComplete = _isFaceScanned;
+    String statusMessage = _isFaceScanned
+        ? 'Biometric identity verified successfully!'
+        : 'Position your face inside the biometric verification frame.';
 
     await showDialog(
       context: context,
@@ -128,14 +202,25 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             }
 
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
               title: const Row(
                 children: [
-                  Icon(Icons.face_retouching_natural_rounded, color: Color(0xFF006c49)),
+                  Icon(
+                    Icons.face_retouching_natural_rounded,
+                    color: Color(0xFF0f5132),
+                  ),
                   SizedBox(width: 12),
-                  Text(
-                    'Live Face Scan Verification',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0b1f14)),
+                  Expanded(
+                    child: Text(
+                      'Live Face Scan Verification',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0f5132),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -150,23 +235,27 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
-                          color: scanComplete ? const Color(0xFF16a34a) : const Color(0xFF404942),
-                          fontWeight: scanComplete ? FontWeight.bold : FontWeight.normal,
+                          color: scanComplete
+                              ? const Color(0xFF16a34a)
+                              : const Color(0xFF404942),
+                          fontWeight: scanComplete
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                       const SizedBox(height: 24),
                       Container(
-                        height: 160,
-                        width: 160,
+                        height: 150,
+                        width: 150,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFF003820),
+                          color: const Color(0xFF002615),
                           border: Border.all(
                             color: scanComplete
                                 ? const Color(0xFF16a34a)
                                 : isScanning
-                                    ? const Color(0xFFD97706)
-                                    : const Color(0xFF6cf8bb),
+                                ? const Color(0xFFD97706)
+                                : const Color(0xFF6cf8bb),
                             width: 3,
                           ),
                         ),
@@ -175,14 +264,25 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                           children: [
                             if (isScanning)
                               const SizedBox(
-                                width: 140,
-                                height: 140,
-                                child: CircularProgressIndicator(color: Color(0xFF6cf8bb), strokeWidth: 3),
+                                width: 130,
+                                height: 130,
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFF6cf8bb),
+                                  strokeWidth: 3,
+                                ),
                               )
                             else if (scanComplete)
-                              const Icon(Icons.check_circle_outline_rounded, color: Colors.greenAccent, size: 72)
+                              const Icon(
+                                Icons.check_circle_outline_rounded,
+                                color: Colors.greenAccent,
+                                size: 68,
+                              )
                             else
-                              const Icon(Icons.face_rounded, color: Color(0xFF81c784), size: 72),
+                              const Icon(
+                                Icons.face_rounded,
+                                color: Color(0xFF81c784),
+                                size: 68,
+                              ),
                           ],
                         ),
                       ),
@@ -190,33 +290,19 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                       if (!scanComplete && !isScanning)
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF003820),
+                            backgroundColor: const Color(0xFF0f5132),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           onPressed: performScan,
                           icon: const Icon(Icons.camera_front_rounded),
-                          label: const Text('Initiate Biometric Scan'),
-                        ),
-                      if (scanComplete)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF16a34a).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.verified_rounded, color: Color(0xFF16a34a), size: 18),
-                              SizedBox(width: 8),
-                              Text(
-                                'Identity Authenticated',
-                                style: TextStyle(color: Color(0xFF16a34a), fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                            ],
-                          ),
+                          label: const Text('Start Facial Scan'),
                         ),
                     ],
                   ),
@@ -225,27 +311,30 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel', style: TextStyle(color: Color(0xFF404942))),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF006c49),
+                    backgroundColor: const Color(0xFF0f5132),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  onPressed: !scanComplete
-                      ? null
-                      : () {
-                          setState(() => _isFaceScanned = true);
-                          Navigator.pop(dialogContext);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Live Face Scan Identity Confirmed!'),
-                              backgroundColor: Color(0xFF006c49),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        },
+                  onPressed: () {
+                    setState(() => _isFaceScanned = true);
+                    Navigator.pop(dialogContext);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Live Face Scan Identity Confirmed!'),
+                        backgroundColor: Color(0xFF0f5132),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
                   child: const Text('Save Verification'),
                 ),
               ],
@@ -256,49 +345,80 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     );
   }
 
+  Future<void> _recalibrateGps() async {
+    try {
+      final locService = LocationServiceFactory.getService();
+      final pos = await locService.getCurrentLocation();
+      setState(() {
+        _lat = pos.latitude;
+        _lon = pos.longitude;
+        _isLocationCaptured = true;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('GPS Coordinates Recalibrated Successfully!'),
+            backgroundColor: Color(0xFF0f5132),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'GPS Error: ${e.toString().replaceAll("Exception: ", "")}',
+            ),
+            backgroundColor: const Color(0xFFba1a1a),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _submitRegister() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_isRoleSelected) {
+      _showRegistrationError('Please choose your ecosystem role first.');
+      return;
+    }
     if (!_isFaceScanned) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please complete the Live Face Scan verification first.'),
-          backgroundColor: Color(0xFFba1a1a),
-          behavior: SnackBarBehavior.floating,
-        ),
+      _showRegistrationError(
+        'Please complete the Live Face Scan verification first.',
+      );
+      return;
+    }
+    if (!_isLocationCaptured || _lat == null || _lon == null) {
+      _showRegistrationError(
+        'Please acquire your Geo-Spatial GPS location first.',
       );
       return;
     }
 
     setState(() => _isLoading = true);
-
     try {
-      if (!_isLocationCaptured) {
-        try {
-          final locService = LocationServiceFactory.getService();
-          final pos = await locService.getCurrentLocation();
-          _lat = pos.latitude;
-          _lon = pos.longitude;
-          _isLocationCaptured = true;
-        } catch (_) {
-          _lat = 3.8480;
-          _lon = 11.5021;
-        }
-      }
-
       await ApiService.register(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
-        role: _selectedRole,
+        phoneNumber: _phoneController.text.trim(),
+        nationalId: _cniController.text.trim(),
+        biometricVerified: _isFaceScanned,
+        role: _selectedRole!,
         latitude: _lat,
         longitude: _lon,
       );
-
+      final contactsVerified = await _verifyContactChannels();
+      if (!contactsVerified) return;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Biometric Enrollment Complete & Registered on Ledger!'),
-            backgroundColor: Color(0xFF006c49),
+            content: Text(
+              'Email and phone verified. Your account is pending final identity review.',
+            ),
+            backgroundColor: Color(0xFF0f5132),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -306,12 +426,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Registration Error: ${e.toString().replaceAll("Exception: ", "")}'),
-            backgroundColor: const Color(0xFFba1a1a),
-            behavior: SnackBarBehavior.floating,
-          ),
+        _showRegistrationError(
+          'Registration Error: ${e.toString().replaceAll("Exception: ", "")}',
         );
       }
     } finally {
@@ -319,467 +435,966 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final currentProgress = _completionProgress;
+  void _showRegistrationError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFFba1a1a),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFe9ffed),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                pinned: true,
-                backgroundColor: const Color(0xFFe9ffed).withValues(alpha: 0.85),
-                elevation: 0,
-                toolbarHeight: 64,
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF003820)),
-                  onPressed: () => Navigator.pop(context),
-                  tooltip: 'Back to Login',
-                ),
-                title: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF003820).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.eco_rounded, color: Color(0xFF003820), size: 20),
-                    ),
-                    const SizedBox(width: 10),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'AgroNexus',
-                          style: TextStyle(color: Color(0xFF003820), fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        Text('Escrow And Orders', style: TextStyle(color: Color(0xFF404942), fontSize: 11)),
-                      ],
-                    ),
-                  ],
-                ),
-                actions: [
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 14),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFd6eedc),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(color: Color(0xFF006c49), shape: BoxShape.circle),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _selectedRole.toLowerCase().capitalize(),
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF005236)),
-                        ),
-                      ],
+  Future<bool> _verifyContactChannels() async {
+    final emailCodeController = TextEditingController();
+    final phoneCodeController = TextEditingController();
+    try {
+      return await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Verify your contact details'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Enter the one-time codes sent to your email and phone. Your account cannot be activated until both are verified.',
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: emailCodeController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Email OTP',
+                      prefixIcon: Icon(Icons.email_outlined),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Padding(
-                    padding: EdgeInsets.only(right: 16.0),
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Color(0xFF003820),
-                      child: Icon(Icons.person, size: 18, color: Colors.white),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: phoneCodeController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Phone OTP',
+                      prefixIcon: Icon(Icons.phone_outlined),
                     ),
                   ),
                 ],
               ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 600),
-                      child: Form(
-                        key: _formKey,
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    try {
+                      await ApiService.verifyRegistrationCode(
+                        email: _emailController.text.trim(),
+                        channel: 'EMAIL',
+                        code: emailCodeController.text.trim(),
+                      );
+                      await ApiService.verifyRegistrationCode(
+                        email: _emailController.text.trim(),
+                        channel: 'PHONE',
+                        code: phoneCodeController.text.trim(),
+                      );
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext, true);
+                      }
+                    } catch (e) {
+                      if (dialogContext.mounted) {
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              e.toString().replaceFirst('Exception: ', ''),
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('Verify'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+    } finally {
+      emailCodeController.dispose();
+      phoneCodeController.dispose();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final showPanel = constraints.maxWidth >= 900;
+            return Row(
+              children: [
+                if (showPanel) Expanded(child: _buildPremiumLeftPanel()),
+                Expanded(
+                  flex: showPanel ? 1 : 2,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: _buildFormContent(),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumLeftPanel() {
+    return Container(
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: NetworkImage(
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuAeQ1oQkkQylhbor-QfqoLQ9Yls4uOQhf9ZDXJAy_QHbCeETZN7Lg0tRwMbWbkWJe4nT1Uq9gZirqlhqZVdj8-yXG-sSpZyv3NwJkqIWaGPuWf9sYOT-RvfYbVRshioZdYZ9kxdw5kd78n_4-_DAzkAEz-eZ3R_pf5Cl6ciHJHVVYaLaX6Y5TntGzHa4_4TkOa_9GnCxXSlsmQDoomG8UwDUlQaTamHUXmnicPWGVbzKM7R6z7DXuQl',
+          ),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            Colors.black.withValues(alpha: 0.45),
+            BlendMode.darken,
+          ),
+        ),
+      ),
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildLiveBadge(),
+              const SizedBox(height: 20),
+              const Text(
+                'Join the Verified\nAgricultural Network',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  height: 1.2,
+                ),
+              ),
+              const Text(
+                'Verifiable',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'One secure identity for every participant in the Central African food supply chain.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFFe2e8f0),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildFeatureHighlightCard(
+                icon: Icons.verified_user_outlined,
+                title: 'Zero-Knowledge Identity',
+                description:
+                    'Verify once without exposing sensitive biometric data.',
+              ),
+              const SizedBox(height: 12),
+              _buildFeatureHighlightCard(
+                icon: Icons.hub_outlined,
+                title: 'Role-Based Access Control',
+                description: 'Every Farmer, Buyer, Transporter, and Agronomist gets the right access.',
+              ),
+              const SizedBox(height: 12),
+              _buildFeatureHighlightCard(
+                icon: Icons.satellite_alt_outlined,
+                title: 'Geo-Spatial Origin Lock',
+                description: 'Produce records tied to verified land coordinates via PostGIS.',
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.only(top: 16),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+              ),
+            ),
+            child: const Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              runSpacing: 6,
+              children: [
+                Text(
+                  'Backend: Spring Boot 3.3 · Java 21',
+                  style: TextStyle(fontSize: 11, color: Color(0xFFcbd5e1)),
+                ),
+                Text(
+                  'v4.2.0 Release',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    color: Color(0xFF4ade80),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavBadge(String text, Color textColor, Color bgColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: textColor.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: textColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLiveBadge() {
+    return AnimatedBuilder(
+      animation: _pulseAnim,
+      builder: (_, child) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Transform.scale(
+              scale: _pulseAnim.value,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF4ade80),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Central African AgTech Mesh',
+              style: TextStyle(
+                color: Color(0xFF6cf8bb),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureHighlightCard({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF22c55e).withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: const Color(0xFF4ade80), size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFFcbd5e1),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // FORM CONTENT (RIGHT PANEL)
+  Widget _buildFormContent() {
+    final currentProgress = _completionProgress;
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(28),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Create Account',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F172A),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Enroll your verified ecosystem workspace on the AgroNexus ledger',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Centre Hub',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF334155),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Progress
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const SizedBox(
+                            width: 7,
+                            height: 7,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Color(0xFF0f5132),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 7),
+                          Text(
+                            '$_currentStageLabel · Stage $_completedSteps of $_totalSteps',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0f5132),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '${(currentProgress * 100).toInt()}%',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0f5132),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: currentProgress,
+                      backgroundColor: const Color(0xFFE2E8F0),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Color(0xFF0f5132),
+                      ),
+                      minHeight: 7,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            const Text(
+              'ECOSYSTEM ROLE',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF94A3B8),
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            Row(
+              children: _roles.map((role) {
+                final isSelected = _selectedRole == role['value'];
+                final roleColor = role['color'] as Color;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: InkWell(
+                      onTap: () => setState(
+                        () => _selectedRole = role['value'] as String,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF0f5132)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF0f5132)
+                                : const Color(0xFFE2E8F0),
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFF0f5132)
+                                        .withValues(alpha: 0.2),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ]
+                              : null,
+                        ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(16),
+                              width: 28,
+                              height: 28,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFe1fae7),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8),
-                                ],
+                                color: isSelected
+                                    ? roleColor.withValues(alpha: 0.15)
+                                    : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text(
-                                        'Biometric Identity & Role',
-                                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF003820)),
-                                      ),
-                                      Text(
-                                        '${(currentProgress * 100).toInt()}%',
-                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF006c49)),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: TweenAnimationBuilder<double>(
-                                      tween: Tween<double>(begin: 0, end: currentProgress),
-                                      duration: const Duration(milliseconds: 400),
-                                      builder: (context, value, _) => LinearProgressIndicator(
-                                        value: value,
-                                        backgroundColor: const Color(0xFFd0e8d6),
-                                        color: const Color(0xFF006c49),
-                                        minHeight: 8,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              child: Icon(
+                                role['icon'] as IconData,
+                                color: isSelected
+                                    ? roleColor
+                                    : const Color(0xFF94A3B8),
+                                size: 16,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Assigned Ecosystem Role',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF003820)),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  GridView.builder(
-                                    shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
-                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      childAspectRatio: 2.2,
-                                      crossAxisSpacing: 10,
-                                      mainAxisSpacing: 10,
-                                    ),
-                                    itemCount: _roles.length,
-                                    itemBuilder: (context, index) {
-                                      final role = _roles[index];
-                                      final isSelected = _selectedRole == role['value'];
-                                      return InkWell(
-                                        onTap: () => setState(() => _selectedRole = role['value']),
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: isSelected ? const Color(0xFF003820) : const Color(0xFFe1fae7),
-                                            borderRadius: BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: isSelected ? const Color(0xFF003820) : const Color(0xFFc0c9c0),
-                                              width: isSelected ? 1.5 : 1,
-                                            ),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                children: [
-                                                  Icon(role['icon'],
-                                                      color: isSelected
-                                                          ? const Color(0xFF6cf8bb)
-                                                          : const Color(0xFF404942),
-                                                      size: 20),
-                                                  Icon(
-                                                    isSelected ? Icons.check_circle : Icons.circle_outlined,
-                                                    color: isSelected ? const Color(0xFF6cf8bb) : const Color(0xFFc0c9c0),
-                                                    size: 16,
-                                                  ),
-                                                ],
-                                              ),
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    role['label'],
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14,
-                                                      color: isSelected ? Colors.white : const Color(0xFF0b1f14),
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    role['desc'],
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: isSelected ? const Color(0xFF95d4ac) : const Color(0xFF404942),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
+                            const SizedBox(height: 6),
+                            Text(
+                              role['label'] as String,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xFF334155),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10),
-                                ],
-                              ),
-                              child: Column(
-                                children: [
-                                  const Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Live Face Scan Telemetry',
-                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF003820)),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Center(
-                                    child: Container(
-                                      height: 180,
-                                      width: 180,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: const Color(0xFF003820),
-                                        border: Border.all(
-                                          color: _isFaceScanned ? const Color(0xFF16a34a) : const Color(0xFF6cf8bb),
-                                          width: 3,
-                                        ),
-                                      ),
-                                      child: Stack(
-                                        alignment: Alignment.center,
-                                        children: [
-                                          const Icon(Icons.face_rounded, size: 80, color: Color(0xFF81c784)),
-                                          if (_isFaceScanned)
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: Colors.black.withValues(alpha: 0.4),
-                                              ),
-                                              child: const Center(
-                                                child: Column(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    Icon(Icons.verified_rounded, color: Colors.greenAccent, size: 40),
-                                                    Text('Verified', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  OutlinedButton.icon(
-                                    style: OutlinedButton.styleFrom(
-                                      minimumSize: const Size(double.infinity, 48),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      side: const BorderSide(color: Color(0xFF003820)),
-                                    ),
-                                    onPressed: _handleBiometricScan,
-                                    icon: Icon(
-                                      _isFaceScanned ? Icons.check_circle : Icons.camera_front_rounded,
-                                      color: _isFaceScanned ? const Color(0xFF16a34a) : const Color(0xFF003820),
-                                    ),
-                                    label: Text(
-                                      _isFaceScanned ? 'Biometric Scan Verified ✓' : 'Initiate Live Face Scan',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: _isFaceScanned ? const Color(0xFF16a34a) : const Color(0xFF003820),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Identity Profile Record',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF003820)),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  TextFormField(
-                                    controller: _nameController,
-                                    onChanged: (_) => setState(() {}),
-                                    decoration: const InputDecoration(
-                                      labelText: 'Full Legal Name',
-                                      hintText: 'Enter your full name',
-                                      prefixIcon: Icon(Icons.person_outline),
-                                    ),
-                                    validator: (v) => v!.isEmpty ? 'Required' : null,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: TextFormField(
-                                          controller: _cniController,
-                                          decoration: const InputDecoration(
-                                            labelText: 'National ID (CNI)',
-                                            hintText: 'e.g., LT-2024-8912',
-                                            prefixIcon: Icon(Icons.badge_outlined),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: TextFormField(
-                                          controller: _phoneController,
-                                          decoration: const InputDecoration(
-                                            labelText: 'Verified Phone',
-                                            hintText: '+237...',
-                                            prefixIcon: Icon(Icons.phone_outlined),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  TextFormField(
-                                    controller: _emailController,
-                                    onChanged: (_) => setState(() {}),
-                                    decoration: const InputDecoration(
-                                      labelText: 'Official Hub Email',
-                                      hintText: 'user@agronexus.io',
-                                      prefixIcon: Icon(Icons.email_outlined),
-                                    ),
-                                    validator: (v) => v!.isEmpty ? 'Required' : null,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  TextFormField(
-                                    controller: _passwordController,
-                                    obscureText: _obscurePassword,
-                                    decoration: InputDecoration(
-                                      labelText: 'Password',
-                                      hintText: 'Min 6 characters',
-                                      prefixIcon: const Icon(Icons.lock_outline),
-                                      suffixIcon: IconButton(
-                                        icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                                      ),
-                                    ),
-                                    validator: (v) => v!.length < 6 ? 'Min 6 characters' : null,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF003820),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                ),
-                                onPressed: _isLoading ? null : _submitRegister,
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                                      )
-                                    : const Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.fingerprint, color: Colors.white),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'Complete Biometric Verification & Enroll',
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            // Back to Login Link
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text('Already have an account?', style: TextStyle(color: Color(0xFF404942), fontSize: 13)),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text(
-                                    'Sign In',
-                                    style: TextStyle(
-                                      color: Color(0xFF003820),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 32),
                           ],
                         ),
                       ),
                     ),
                   ),
-                ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 18),
+
+            _buildActionCard(
+              icon: Icons.face_retouching_natural_rounded,
+              label: 'Live Biometric Scan',
+              status: _isFaceScanned ? 'Verified ✓' : 'Pending Scan',
+              statusOk: _isFaceScanned,
+              buttonText: _isFaceScanned ? 'Re-Verify' : 'Verify Now',
+              onTap: _handleBiometricScan,
+            ),
+            const SizedBox(height: 10),
+            _buildGpsCard(),
+            const SizedBox(height: 18),
+
+            const Text(
+              'PERSONAL DETAILS',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF94A3B8),
+                letterSpacing: 1.2,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 10),
+            _buildField(
+              controller: _nameController,
+              label: 'Full Legal Name',
+              hint: 'Enter your full name',
+              icon: Icons.person_outline,
+              onChanged: (_) => setState(() {}),
+              validator: (value) => _validName(value ?? ''),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildField(
+                    controller: _cniController,
+                    label: 'National ID (CNI)',
+                    hint: 'CNI number',
+                    icon: Icons.badge_outlined,
+                    onChanged: (_) => setState(() {}),
+                    validator: (value) => _validCni(value ?? ''),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildField(
+                    controller: _phoneController,
+                    label: 'Phone Number',
+                    hint: '+237...',
+                    icon: Icons.phone_outlined,
+                    onChanged: (_) => setState(() {}),
+                    validator: (value) => _validPhone(value ?? ''),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _buildField(
+              controller: _emailController,
+              label: 'Official Hub Email',
+              hint: 'user@agronexus.io',
+              icon: Icons.email_outlined,
+              onChanged: (_) => setState(() {}),
+              validator: (value) => _validEmail(value ?? ''),
+            ),
+            const SizedBox(height: 10),
+            _buildPasswordField(onChanged: (_) => setState(() {})),
+            const SizedBox(height: 22),
+
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0f5132),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 4,
+                ),
+                onPressed: _isLoading ? null : _submitRegister,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Complete Verification & Enroll',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward_rounded, size: 16),
+                        ],
+                      ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Already have an account?',
+                    style: TextStyle(color: Color(0xFF64748B), fontSize: 12.5),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      'Sign In',
+                      style: TextStyle(
+                        color: Color(0xFF0f5132),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-extension StringExtension on String {
-  String capitalize() {
-    if (isEmpty) return this;
-    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
+  Widget _buildActionCard({
+    required IconData icon,
+    required String label,
+    required String status,
+    required bool statusOk,
+    required String buttonText,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: statusOk ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
+        border: Border.all(
+          color: statusOk ? const Color(0xFFBBF7D0) : const Color(0xFFFDE68A),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: statusOk
+                  ? const Color(0xFF0f5132)
+                  : const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: statusOk
+                  ? const Color(0xFF6cf8bb)
+                  : const Color(0xFFD97706),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  status,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: statusOk
+                        ? const Color(0xFF065F46)
+                        : const Color(0xFFB45309),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              backgroundColor: Colors.white,
+              side: BorderSide(
+                color: statusOk
+                    ? const Color(0xFF0f5132)
+                    : const Color(0xFFD97706),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: onTap,
+            child: Text(
+              buttonText,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: statusOk
+                    ? const Color(0xFF0f5132)
+                    : const Color(0xFFB45309),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGpsCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: _isLocationCaptured
+            ? const Color(0xFFF0FDF4)
+            : const Color(0xFFFFFBEB),
+        border: Border.all(
+          color: _isLocationCaptured
+              ? const Color(0xFFBBF7D0)
+              : const Color(0xFFFDE68A),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: _isLocationCaptured
+                  ? const Color(0xFF0f5132)
+                  : const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.location_on_rounded,
+              color: _isLocationCaptured
+                  ? const Color(0xFF6cf8bb)
+                  : const Color(0xFFD97706),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Geo-Spatial GPS Sync',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _isLocationCaptured && _lat != null && _lon != null
+                      ? 'Lat: ${_lat!.toStringAsFixed(5)}\u00b0, Lon: ${_lon!.toStringAsFixed(5)}\u00b0'
+                      : 'Coordinates not yet acquired',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: _isLocationCaptured
+                        ? const Color(0xFF065F46)
+                        : const Color(0xFFB45309),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              backgroundColor: Colors.white,
+              side: BorderSide(
+                color: _isLocationCaptured
+                    ? const Color(0xFF0f5132)
+                    : const Color(0xFFD97706),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: _recalibrateGps,
+            icon: Icon(
+              Icons.my_location_rounded,
+              size: 12,
+              color: _isLocationCaptured
+                  ? const Color(0xFF0f5132)
+                  : const Color(0xFFB45309),
+            ),
+            label: Text(
+              _isLocationCaptured ? 'Re-sync' : 'Acquire GPS',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: _isLocationCaptured
+                    ? const Color(0xFF0f5132)
+                    : const Color(0xFFB45309),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    void Function(String)? onChanged,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, size: 18),
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0f5132), width: 1.5),
+        ),
+        labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+        hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFFCBD5E1)),
+      ),
+      validator:
+          validator ?? (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+    );
+  }
+
+  Widget _buildPasswordField({void Function(String)? onChanged}) {
+    return TextFormField(
+      controller: _passwordController,
+      obscureText: _obscurePassword,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: 'Escrow Vault Password',
+        hintText: 'Min 10 characters',
+        prefixIcon: const Icon(Icons.lock_outline, size: 18),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscurePassword
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+            size: 18,
+            color: const Color(0xFF94A3B8),
+          ),
+          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+        ),
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0f5132), width: 1.5),
+        ),
+        labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+        hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFFCBD5E1)),
+      ),
+      validator: _validPassword,
+    );
   }
 }

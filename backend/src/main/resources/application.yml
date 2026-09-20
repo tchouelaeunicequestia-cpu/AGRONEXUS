@@ -4,6 +4,7 @@
 # ==============================================================================
 
 server:
+  address: 0.0.0.0
   port: ${PORT:8080}
   servlet:
     context-path: /
@@ -44,6 +45,10 @@ spring:
 # HOW: JWTs are signed with HMAC-SHA256 and valid for 24 hours.
 # ==============================================================================
 agronexus:
+  verification:
+    # Use "console" only for local development. Production must provide an
+    # email/SMS adapter and set this to its delivery mode.
+    delivery-mode: ${VERIFICATION_DELIVERY_MODE:disabled}
   jwt:
     secret: ${JWT_SECRET:9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b}
     expiration-ms: 86400000 # 24 Hours in milliseconds

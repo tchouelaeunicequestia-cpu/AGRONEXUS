@@ -12,7 +12,7 @@ The platform is currently in the **Working Prototype / MVP Foundation Stage**:
 
 | Module / Epic | Baseline Implementation Status | Progress |
 |---|---|---:|
-| 🔐 **Auth & Roles (Epic 1)** | Multi-role registration & login (`FARMER`, `BUYER`, `TRANSPORTER`, `AGRONOMIST`, `ADMIN`), JWT access/refresh tokens, BCrypt strength 12. | 60% |
+| 🔐 **Auth & Roles (Epic 1)** | Multi-role registration & login, JWT access/refresh tokens, BCrypt strength 12, strict validation, email/phone OTP challenges, hashed national ID, and fail-closed biometric/GPS checks. | 75% |
 | 🌽 **Produce Catalog & Spatial (Epic 2)** | PostGIS `Point` produce listings (`ProductController.java`), Buyer `ST_DWithin` radial spatial search (5km–100km). | 65% |
 | 💳 **Escrow & Payments (Epic 3)** | `EscrowEngineService` formula (1.5% MoMo buffer), Order entity, lock/disburse endpoints. Frontend checkout connection pending. | 45% |
 | 🚚 **Transport & Logistics (Epic 4)** | Data model & `EscrowStatus` state enum created. Transporter UI & dispatch execution pending. | 10% |
@@ -32,6 +32,7 @@ The platform is currently in the **Working Prototype / MVP Foundation Stage**:
 | 📑 [PROJECT_REPORT.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/PROJECT_REPORT.md) | **Complete Software Engineering & AI Project Report** (Chapters 1–6, Abstract, Declarations, System Architecture, Performance Benchmarks, Appendices). |
 | 📄 [PROJECT_SPECIFICATION.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/PROJECT_SPECIFICATION.md) | Project background, problem statement, research questions, objectives, scope & delimitations. |
 | 📋 [REQUIREMENTS.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/REQUIREMENTS.md) | Functional epics (Epics 1–7), Non-Functional Requirements (NFR1–NFR4), and Requirements Traceability Matrix. |
+| 📈 [PRODUCE_LISTING_AND_DASHBOARD_UPDATES.md](file:///c:/Users/lenovo%20p14s/Music/AGRONEXUS/docs/PRODUCE_LISTING_AND_DASHBOARD_UPDATES.md) | Feature status and verification history for the farmer dashboard, produce listing, image capture, and optional IoT linking. |
 
 ---
 
