@@ -104,6 +104,8 @@ public class EscrowController {
                 "quantity", order.getQuantity(),
                 "itemCost", order.getItemCost(),
                 "transportFee", order.getTransportFee(),
+                "platformServiceFee", order.getDepositBuffer(),
+                // Retained for clients using the original response contract.
                 "depositBuffer", order.getDepositBuffer(),
                 "deliveryAddress", order.getDeliveryAddress(),
                 "status", order.getEscrowStatus().name());
