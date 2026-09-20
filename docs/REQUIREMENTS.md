@@ -47,12 +47,12 @@ This document specifies the complete functional epics, non-functional requiremen
 
 ### Epic 3: Sales, Escrow & Payment Processing
 - **FR3.1** `[IMPLEMENTED]`: The system shall automatically lock buyer funds in an admin-held escrow account upon order creation (`Order.java`, `EscrowController.java`).
-- **FR3.2** `[IMPLEMENTED]`: The escrow engine (`EscrowEngineService.java`) shall calculate total depository using the formula:  
+- **FR3.2** `[IMPLEMENTED]`: The escrow engine (`EscrowEngineService.java`) shall calculate total depository using a transparent 5% platform service fee on the item cost:  
   - **Freight Delivery**:  
-    $$\text{Total Depository} = \text{Item Cost} + \text{Transport Fee} + (2 \times \text{Deposit Buffer})$$  
+    $$\text{Total Depository} = \text{Item Cost} + \text{Transport Fee} + \text{Platform Service Fee}$$  
   - **Direct Buyer Self-Pickup**:  
-    $$\text{Total Depository} = \text{Item Cost} + (1 \times \text{Deposit Buffer}) \quad [\text{Transport Fee} = 0.00]$$  
-  - **Mobile Money Fee Coverage**: The `Deposit Buffer` incorporates a 1.5% MTN MoMo & Orange Money cashout fee buffer, guaranteeing farmers receive 100% net produce price.
+    $$\text{Total Depository} = \text{Item Cost} + \text{Platform Service Fee} \quad [\text{Transport Fee} = 0.00]$$  
+  - **Platform Service Fee**: The fee is 5% of the item cost, is charged once, and is shown as a separate line item before checkout.
 - **FR3.3** `[PARTIALLY IMPLEMENTED]`: The system shall disburse escrow funds upon verified delivery. *Status Note*: Backend disbursement endpoint (`/api/v1/escrow/disburse/{code}`) updates status to `COMPLETED`, but integration with real Mobile Money sandboxes and 85/15 wallet payout automation is pending.
 - **FR3.4** `[PENDING]`: The system shall provide an admin arbitration workflow for escrow disputes, backed by IoT storage logs and delivery audit trails.
 

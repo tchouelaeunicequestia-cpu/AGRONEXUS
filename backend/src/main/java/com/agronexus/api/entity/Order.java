@@ -86,7 +86,9 @@ public class Order {
             isSelfPickup = false;
         }
         if (escrowStatus == null) {
-            escrowStatus = isSelfPickup ? EscrowStatus.READY_FOR_PICKUP : EscrowStatus.HELD_IN_ESCROW;
+            escrowStatus = isSelfPickup
+                    ? EscrowStatus.HELD_IN_ESCROW
+                    : EscrowStatus.TRANSPORT_QUOTE_PENDING;
         }
     }
 

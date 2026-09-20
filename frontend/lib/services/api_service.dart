@@ -302,8 +302,58 @@ class ApiService {
       return jsonDecode(response.body);
     }
     final errorBody = jsonDecode(response.body);
-    throw Exception(
-      errorBody['error'] ?? 'Unable to create the escrow order.',
+    throw Exception(errorBody['error'] ?? 'Unable to create the escrow order.');
+  }
+
+  static Future<Map<String, dynamic>> submitTransportQuote({
+    required String orderCode,
+    required double transportFee,
+  }) async {
+    final response = await authenticatedRequest(
+      '/api/v1/escrow/order/$orderCode/quote',
+      method: 'POST',
+      body: {'transportFee': transportFee},
     );
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(data);
+    }
+    throw Exception(data['error'] ?? 'Unable to submit the transport quote.');
+  }
+
+  static Future<Map<String, dynamic>> approveTransportQuote({
+    required String orderCode,
+  }) async {
+    final response = await authenticatedRequest(
+      '/api/v1/escrow/order/$orderCode/approve-quote',
+      method: 'POST',
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(data);
+    }
+    throw Exception(data['error'] ?? 'Unable to approve the transport quote.');
+  }
+
+  static Future<List<Map<String, dynamic>>> getTransportQuoteRequests() async {
+    final response = await authenticatedRequest(
+      '/api/v1/transporter/quote-requests',
+      method: 'GET',
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Unable to load transport quote requests.');
+    }
+    return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+  }
+
+  static Future<List<Map<String, dynamic>>> getBuyerQuoteOrders() async {
+    final response = await authenticatedRequest(
+      '/api/v1/escrow/buyer/orders',
+      method: 'GET',
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Unable to load your quote orders.');
+    }
+    return List<Map<String, dynamic>>.from(jsonDecode(response.body));
   }
 }

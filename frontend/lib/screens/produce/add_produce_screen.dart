@@ -1743,14 +1743,14 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Mobile Money Buffer (1.5%)',
+                            'Platform Service Fee (5%)',
                             style: TextStyle(
                               fontSize: 12,
                               color: Color(0xFF404942),
                             ),
                           ),
                           Text(
-                            '0 XAF (Buyer Absorbed)',
+                            'Shown at checkout',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,

@@ -399,7 +399,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
     setState(() => _isLoading = true);
     try {
-      await ApiService.register(
+      final registrationData = await ApiService.register(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -414,9 +414,10 @@ class _RegisterScreenState extends State<RegisterScreen>
       if (!contactsVerified) return;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Email and phone verified. Your account is pending final identity review.',
+              '${registrationData['message']?.toString() ?? 'Registration successful.'} '
+              'Email and phone verified.',
             ),
             backgroundColor: Color(0xFF0f5132),
             behavior: SnackBarBehavior.floating,

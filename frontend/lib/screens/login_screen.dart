@@ -68,13 +68,14 @@ class _LoginScreenState extends State<LoginScreen>
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.check_circle_rounded, color: Colors.white),
-              SizedBox(width: 12),
+              const Icon(Icons.check_circle_rounded, color: Colors.white),
+              const SizedBox(width: 12),
               Text(
-                'Welcome back to AgroNexus!',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                authData['message']?.toString() ??
+                    'Login successful. Welcome back to AgroNexus!',
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -283,7 +284,6 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                   ),
                 ),
-
               ],
             ),
           ),
@@ -372,7 +372,7 @@ class _LoginScreenState extends State<LoginScreen>
               _buildFeatureHighlightCard(
                 icon: Icons.shield_outlined,
                 title: 'Multi-Sig Escrow Vault',
-                description: '100% net farmer payout with 1.5% MoMo fee buffering & dual verification.',
+                description: 'Transparent 5% platform service fee, escrow protection, and dual verification.',
               ),
               const SizedBox(height: 12),
               _buildFeatureHighlightCard(

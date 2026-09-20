@@ -16,7 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.agronexus.api.model.EscrowTransaction;
 import com.agronexus.api.repository.EscrowRepository;
+import com.agronexus.api.entity.User;
 import com.agronexus.api.service.EscrowEngineService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.agronexus.api.entity.Order;
+import com.agronexus.api.repository.OrderRepository;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/escrow")
@@ -24,10 +30,13 @@ public class EscrowController {
 
     private final EscrowRepository escrowRepository;
     private final EscrowEngineService escrowEngineService;
+    private final OrderRepository orderRepository;
 
-    public EscrowController(EscrowRepository escrowRepository, EscrowEngineService escrowEngineService) {
+    public EscrowController(EscrowRepository escrowRepository, EscrowEngineService escrowEngineService,
+                            OrderRepository orderRepository) {
         this.escrowRepository = escrowRepository;
         this.escrowEngineService = escrowEngineService;
+        this.orderRepository = orderRepository;
     }
 
     @PostMapping("/order")
@@ -37,22 +46,67 @@ public class EscrowController {
             Long buyerId = ((Number) payload.get("buyerId")).longValue();
             Long productId = ((Number) payload.get("productId")).longValue();
             Double quantity = ((Number) payload.get("quantity")).doubleValue();
-            BigDecimal transportFee = payload.get("transportFee") == null
-                    ? null
-                    : new BigDecimal(payload.get("transportFee").toString());
             Boolean isSelfPickup = payload.get("isSelfPickup") == null
                     ? Boolean.FALSE
                     : Boolean.valueOf(payload.get("isSelfPickup").toString());
             String deliveryAddress = (String) payload.get("deliveryAddress");
 
             return ResponseEntity.status(201).body(escrowEngineService.createEscrowOrder(
-                    buyerId, productId, quantity, transportFee, isSelfPickup, deliveryAddress));
+                    buyerId, productId, quantity, null, isSelfPickup, deliveryAddress));
         } catch (NullPointerException | ClassCastException | NumberFormatException e) {
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "buyerId, productId, and quantity are required and must be valid."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @PostMapping("/order/{orderCode}/quote")
+    @PreAuthorize("hasRole('TRANSPORTER')")
+    public ResponseEntity<?> submitTransportQuote(
+            @PathVariable String orderCode,
+            @RequestBody Map<String, Object> payload,
+            @AuthenticationPrincipal User transporter) {
+        try {
+            BigDecimal transportFee = new BigDecimal(payload.get("transportFee").toString());
+            return ResponseEntity.ok(escrowEngineService.submitTransportQuote(
+                    orderCode, transporter, transportFee));
+        } catch (NullPointerException | NumberFormatException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "transportFee is required and must be a valid amount."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/order/{orderCode}/approve-quote")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<?> approveTransportQuote(
+            @PathVariable String orderCode,
+            @AuthenticationPrincipal User buyer) {
+        return ResponseEntity.ok(escrowEngineService.approveTransportQuote(orderCode, buyer));
+    }
+
+    @GetMapping("/buyer/orders")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<List<Map<String, Object>>> getBuyerQuoteOrders(
+            @AuthenticationPrincipal User buyer) {
+        return ResponseEntity.ok(orderRepository.findByBuyerId(buyer.getId()).stream()
+                .filter(order -> order.getEscrowStatus() == com.agronexus.api.entity.EscrowStatus.PENDING)
+                .map(this::orderSummary)
+                .collect(Collectors.toList()));
+    }
+
+    private Map<String, Object> orderSummary(Order order) {
+        return Map.of(
+                "orderCode", order.getOrderCode(),
+                "productTitle", order.getProduct().getTitle(),
+                "quantity", order.getQuantity(),
+                "itemCost", order.getItemCost(),
+                "transportFee", order.getTransportFee(),
+                "depositBuffer", order.getDepositBuffer(),
+                "deliveryAddress", order.getDeliveryAddress(),
+                "status", order.getEscrowStatus().name());
     }
 
     @PostMapping("/initialize")

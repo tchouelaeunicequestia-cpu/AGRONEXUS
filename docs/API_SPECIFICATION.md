@@ -22,6 +22,7 @@ Content-Type: application/json
 #### `POST /api/v1/auth/register`
 - **Access**: Public
 - **Description**: Validates and creates a pending user account, stores only a hash of the national ID, records biometric evidence status, and issues email and phone verification challenges.
+- **Success Response**: Returns a `message` explaining that email and phone verification must be completed before sign-in; roles requiring approval also mention administrative vetting.
 - **Request Body**:
 ```json
 {
@@ -39,7 +40,7 @@ Content-Type: application/json
 
 #### `POST /api/v1/auth/login`
 - **Access**: Public
-- **Description**: Authenticates user credentials and returns JWT access token & refresh token.
+- **Description**: Authenticates user credentials and returns JWT access token, refresh token, and a user-facing success `message`.
 
 #### `POST /api/v1/auth/refresh`
 - **Access**: Public
@@ -107,7 +108,7 @@ Content-Type: application/json
 
 #### `POST /api/v1/escrow/order`
 - **Access**: `BUYER`, `ADMIN`
-- **Description**: Creates an escrow order, calculates deposit buffer (including 1.5% MoMo fee coverage), locks funds, and generates admin notification text.
+- **Description**: Creates an order, calculates a transparent platform service fee equal to 5% of the item cost, and generates an order notification. Self-pickup locks immediately; freight delivery waits for transporter quote approval.
 - **Official Escrow Wallets**:
   - **Orange Money Escrow Wallet**: `+237694002750`
   - **MTN Mobile Money Escrow Wallet**: `+237651305141`
@@ -122,6 +123,19 @@ Content-Type: application/json
   "deliveryAddress": "Bastos, Yaoundé, Cameroon"
 }
 ```
+
+For freight delivery, the order is created as `TRANSPORT_QUOTE_PENDING` and no funds
+are locked yet. A transporter submits a quote through
+`POST /api/v1/escrow/order/{orderCode}/quote`; the buyer then approves it through
+`POST /api/v1/escrow/order/{orderCode}/approve-quote`. Only after approval does
+the order transition to `HELD_IN_ESCROW` with its final escrow total.
+
+Dashboard quote queues:
+
+- `GET /api/v1/transporter/quote-requests` returns delivery orders waiting for a
+  transporter quote.
+- `GET /api/v1/escrow/buyer/orders` returns the authenticated buyer's quoted
+  orders awaiting approval.
 
 #### `POST /api/v1/escrow/disburse/{orderCode}`
 - **Access**: `BUYER`, `ADMIN`

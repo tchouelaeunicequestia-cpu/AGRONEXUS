@@ -100,9 +100,9 @@ public class AuthController {
                     .body(Map.of("error", e.getMessage()));
         }
         
-        String message = requiresApproval 
-            ? "Registration successful. Your account is pending administrative vetting by an AgroNexus Admin." 
-            : "Registration successful. You may now login.";
+        String message = requiresApproval
+                ? "Registration successful. Verify your email and phone, then wait for administrative vetting by an AgroNexus Admin."
+                : "Registration successful. Verify your email and phone before signing in.";
 
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "userId", saved.getId(),
@@ -177,7 +177,8 @@ public class AuthController {
                 "userId", user.getId(),
                 "role", user.getRole().name(),
                 "email", user.getEmail(),
-                "fullName", user.getFullName()
+                "fullName", user.getFullName(),
+                "message", "Login successful. Welcome back to AgroNexus!"
         ));
     }
 
