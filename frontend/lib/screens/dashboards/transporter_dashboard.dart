@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:convert';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
 import '../../services/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/platform_services.dart';
@@ -484,10 +483,101 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
                                   ),
                                 ),
                               )),
+                        const SizedBox(height: 20),
+
+                        // FR4.2: Active Freight Corridor & State Tracking Panel
+                        _buildActiveDeliveriesSection(),
                       ],
                     ),
                   ),
                 ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveDeliveriesSection() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Active Freight Corridor & State Tracking',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Monitor order delivery states across CEMAC transit zones.',
+                style: TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+              const SizedBox(height: 16),
+              _buildStateTimelineStep('Escrow Locked', 'Funds secured in trust vault', true),
+              _buildStateTimelineStep('Dispatched', 'Transporter assigned to pickup', true),
+              _buildStateTimelineStep('In Transit', 'En route to buyer hub via corridor', true),
+              _buildStateTimelineStep('Delivered', 'Handover at destination completed', false),
+              _buildStateTimelineStep('Completed', 'Escrow disbursed (85% Farmer / 15% Transporter)', false),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStateTimelineStep(String title, String subtitle, bool isComplete) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isComplete ? const Color(0xFF16A34A) : Colors.white.withOpacity(0.2),
+            ),
+            child: Icon(
+              isComplete ? Icons.check : Icons.hourglass_empty,
+              size: 14,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: isComplete ? Colors.white : Colors.white60,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: isComplete ? Colors.white70 : Colors.white38,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
