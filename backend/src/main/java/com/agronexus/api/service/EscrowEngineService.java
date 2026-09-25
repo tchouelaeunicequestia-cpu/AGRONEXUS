@@ -16,7 +16,7 @@ import java.util.UUID;
  * ==============================================================================
  * AgroNexus Escrow Financial Engine Service
  * 
- * WHY: Enforces financial escrow rules, MoMo/Orange withdrawal fee coverage, and payouts.
+ * WHY: Enforces transparent escrow fees and payouts.
  * HOW: Routes escrow deposits to official Admin Mobile Money Wallets:
  *      - Orange Money Escrow Wallet: +237 694002750
  *      - MTN MoMo Escrow Wallet:     +237 651305141
@@ -30,19 +30,22 @@ public class EscrowEngineService {
     public static final String OFFICIAL_ORANGE_MONEY_ESCROW = "+237694002750";
     public static final String OFFICIAL_MTN_MOMO_ESCROW     = "+237651305141";
 
-    // 1.5% Standard MTN Mobile Money (MoMo) & Orange Money cashout fee rate
-    private static final BigDecimal MOMO_ORANGE_CASHOUT_FEE_RATE = new BigDecimal("0.015");
+    // A single, transparent platform handling fee applied to the item cost.
+    private static final BigDecimal PLATFORM_SERVICE_FEE_RATE = new BigDecimal("0.05");
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final OrderEmailService orderEmailService;
 
     public EscrowEngineService(OrderRepository orderRepository,
                                ProductRepository productRepository,
-                               UserRepository userRepository) {
+                               UserRepository userRepository,
+                               OrderEmailService orderEmailService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.orderEmailService = orderEmailService;
     }
 
     /**
@@ -71,14 +74,11 @@ public class EscrowEngineService {
         BigDecimal itemCost = product.getPricePerUnit().multiply(BigDecimal.valueOf(quantity));
         BigDecimal freight = selfPickup ? BigDecimal.ZERO : (transportFee != null ? transportFee : BigDecimal.valueOf(5000));
         
-        // Calculate MTN / Orange Money cashout fee buffer (1.5%) so Farmer receives exact net price
-        BigDecimal momoCashoutFee = itemCost.multiply(MOMO_ORANGE_CASHOUT_FEE_RATE).setScale(2, RoundingMode.CEILING);
-        BigDecimal depositBuffer = momoCashoutFee.add(BigDecimal.valueOf(5000)); // MoMo fee + security buffer
+        // Keep the fee proportional to the order and charge it once for either fulfilment mode.
+        BigDecimal depositBuffer = itemCost.multiply(PLATFORM_SERVICE_FEE_RATE)
+                .setScale(2, RoundingMode.CEILING);
 
-        // Total Depository Formula Execution
-        BigDecimal totalEscrow = selfPickup ? 
-                itemCost.add(depositBuffer) : 
-                itemCost.add(freight).add(depositBuffer.multiply(BigDecimal.valueOf(2)));
+        BigDecimal totalEscrow = itemCost.add(freight).add(depositBuffer);
 
         String orderCode = "ORD-2026-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
@@ -91,18 +91,22 @@ public class EscrowEngineService {
                 .itemCost(itemCost)
                 .transportFee(freight)
                 .depositBuffer(depositBuffer)
-                .totalEscrowAmount(totalEscrow)
-                .escrowStatus(EscrowStatus.HELD_IN_ESCROW)
+                .totalEscrowAmount(selfPickup ? totalEscrow : BigDecimal.ZERO)
+                .escrowStatus(selfPickup
+                        ? EscrowStatus.HELD_IN_ESCROW
+                        : EscrowStatus.TRANSPORT_QUOTE_PENDING)
                 .deliveryAddress(deliveryAddress)
                 .build();
 
         Order savedOrder = orderRepository.save(order);
+        orderEmailService.sendOrderCreatedEmail(savedOrder);
 
         // Admin Notification Payload with Farmer Registered Phone Number
         String adminNotification = String.format(
-            "🔔 [AGRONEXUS ESCROW ALERT]\nOrder Code: %s\nTotal Escrow Locked: %s XAF\nBuyer: %s (Phone: %s)\nFarmer: %s (Phone: %s)\nProduce: %s (%s kg)\nMode: %s",
+            "🔔 [AGRONEXUS ORDER ALERT]\nOrder Code: %s\nStatus: %s\nEscrow Amount: %s\nBuyer: %s (Phone: %s)\nFarmer: %s (Phone: %s)\nProduce: %s (%s kg)\nMode: %s",
             orderCode,
-            totalEscrow.toPlainString(),
+            selfPickup ? EscrowStatus.HELD_IN_ESCROW : EscrowStatus.TRANSPORT_QUOTE_PENDING,
+            selfPickup ? totalEscrow.toPlainString() + " XAF" : "Pending transporter quote",
             buyer.getFullName(),
             buyer.getPhoneNumber() != null ? buyer.getPhoneNumber() : "Not Provided",
             farmer.getFullName(),
@@ -119,6 +123,48 @@ public class EscrowEngineService {
             "farmerPhoneNumber", farmer.getPhoneNumber() != null ? farmer.getPhoneNumber() : "N/A",
             "adminNotificationText", adminNotification
         );
+    }
+
+    @Transactional
+    public Order submitTransportQuote(String orderCode, User transporter, BigDecimal transportFee) {
+        if (transportFee == null || transportFee.signum() < 0) {
+            throw new IllegalArgumentException("Transport fee must be zero or greater.");
+        }
+
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        if (Boolean.TRUE.equals(order.getIsSelfPickup())) {
+            throw new IllegalStateException("Self-pickup orders do not require a transport quote.");
+        }
+        if (order.getEscrowStatus() != EscrowStatus.TRANSPORT_QUOTE_PENDING) {
+            throw new IllegalStateException("This order is not waiting for a transport quote.");
+        }
+
+        order.setTransporter(transporter);
+        order.setTransportFee(transportFee);
+        order.setEscrowStatus(EscrowStatus.PENDING);
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    public Order approveTransportQuote(String orderCode, User buyer) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        if (!order.getBuyer().getId().equals(buyer.getId())) {
+            throw new SecurityException("Only the buyer who created the order can approve its quote.");
+        }
+        if (order.getEscrowStatus() != EscrowStatus.PENDING
+                || order.getTransporter() == null
+                || order.getTransportFee() == null) {
+            throw new IllegalStateException("A transporter quote must be submitted before approval.");
+        }
+
+        BigDecimal totalEscrow = order.getItemCost()
+                .add(order.getTransportFee())
+                .add(order.getDepositBuffer());
+        order.setTotalEscrowAmount(totalEscrow);
+        order.setEscrowStatus(EscrowStatus.HELD_IN_ESCROW);
+        return orderRepository.save(order);
     }
 
     /**

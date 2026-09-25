@@ -1,5 +1,6 @@
 // lib/screens/dashboards/admin_dashboard.dart
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -123,7 +124,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         .length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE9FFED),
+      backgroundColor: Colors.black, // Fallback color
       appBar: AppBar(
         backgroundColor: Colors.white.withValues(alpha: 0.85),
         elevation: 0,
@@ -207,7 +208,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
           const SizedBox(width: 8),
         ],
       ),
-      body: _isLoading
+      body: Stack(
+        children: [
+          // BOTTOM LAYER: Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/farm_background.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0F382C)),
+            ),
+          ),
+          // TOP LAYER: Original UI (untouched)
+          _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFF003820)),
             )
@@ -410,6 +422,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ],
               ),
             ),
+        ],
+      ),
     );
   }
 
@@ -446,29 +460,36 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget _buildMetricCard(String title, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.55),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.4)),
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -479,11 +500,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final name = account['fullName']?.toString() ?? 'Unknown account';
     final role = account['role']?.toString() ?? 'USER';
 
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.55),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isVerified ? const Color(0xFFD6EEDC) : const Color(0xFFFDE68A),
@@ -546,6 +571,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: Text(isVerified ? 'De-approve' : 'Approve'),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

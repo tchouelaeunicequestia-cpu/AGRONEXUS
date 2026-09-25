@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +25,7 @@ class _BuyerDashboardState extends State<BuyerDashboard>
   String _locationDescription = 'Yaoundé, Centre Region, Cameroon';
   String _selectedCategory = 'All';
   String _searchQuery = '';
+  List<Map<String, dynamic>> _quoteOrders = [];
   int _activeNavIndex = 0; // 0: Market, 1: Escrow, 2: Telemetry, 3: AgroAI
 
   final TextEditingController _searchController = TextEditingController();
@@ -165,6 +167,81 @@ class _BuyerDashboardState extends State<BuyerDashboard>
     );
 
     _loadUserLocationAndProduce();
+    _loadQuoteOrders();
+  }
+
+  Future<void> _loadQuoteOrders() async {
+    try {
+      final orders = await ApiService.getBuyerQuoteOrders();
+      if (mounted) setState(() => _quoteOrders = orders);
+    } catch (_) {}
+  }
+
+  Future<void> _approveQuote(String orderCode) async {
+    try {
+      await ApiService.approveTransportQuote(orderCode: orderCode);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Quote approved and funds locked in escrow.'),
+          ),
+        );
+      }
+      await _loadQuoteOrders();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildQuoteOrders() {
+    if (_quoteOrders.isEmpty) return const SizedBox.shrink();
+    return ClipRRect(
+  borderRadius: BorderRadius.circular(16),
+  child: BackdropFilter(
+    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+    child: Card( color: Colors.white.withOpacity(0.55),
+
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Transport quotes awaiting approval',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            ..._quoteOrders.map((order) {
+              final total =
+                  (order['itemCost'] ?? 0) +
+                  (order['transportFee'] ?? 0) +
+                  (order['depositBuffer'] ?? 0);
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('${order['productTitle']} · ${order['orderCode']}'),
+                subtitle: Text(
+                  'Transport: ${order['transportFee']} XAF\n'
+                  'Estimated escrow (including 5% service fee): $total XAF',
+                ),
+                isThreeLine: true,
+                trailing: FilledButton(
+                  onPressed: () => _approveQuote(order['orderCode']),
+                  child: const Text('Approve'),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    ),
+  ),
+);
   }
 
   @override
@@ -266,193 +343,262 @@ class _BuyerDashboardState extends State<BuyerDashboard>
 
   void _openEscrowCheckoutModal(Map<String, dynamic> item) {
     final double price = (item['pricePerUnit'] ?? 0).toDouble();
-    final double transportFee = 5000.0;
-    final double depositBuffer = 6350.0;
-    final double totalDepository = price + transportFee + (2 * depositBuffer);
+    final double availableQuantity = (item['availableQuantity'] ?? 0)
+        .toDouble();
+    double quantity = availableQuantity > 0 ? 1 : 0;
+    bool isSelfPickup = false;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final double? transportFee = isSelfPickup ? 0 : null;
+          final double platformServiceFee = price * quantity * 0.05;
+          final double? totalDepository = isSelfPickup
+              ? price * quantity + platformServiceFee
+              : null;
+
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
-            const SizedBox(height: 20),
-            Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEFFAF3),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFD7F3E3)),
-                  ),
-                  child: const Icon(
-                    Icons.verified_user_rounded,
-                    color: Color(0xFF0F5132),
-                    size: 24,
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Escrow Depository Order Lock',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFFAF3),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFD7F3E3)),
                       ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Mobile Money Escrow Protection (1.5% Fee Covered)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF64748B),
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: const Icon(
+                        Icons.verified_user_rounded,
+                        color: Color(0xFF0F5132),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Escrow Depository Order Lock',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Transparent 5% platform service fee',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildModalCostRow(
+                        'Produce Harvest Lot',
+                        item['title'],
+                        isBold: true,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModalCostRow(
+                        'Producer / Cooperative',
+                        item['farmerName'],
+                      ),
+                      const Divider(height: 20, color: Color(0xFFE2E8F0)),
+                      _buildModalCostRow(
+                        'Item Cost',
+                        '${(price * quantity).toStringAsFixed(0)} XAF',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModalCostRow(
+                        'Freight Dispatch Fee',
+                        isSelfPickup ? '0 XAF' : 'Pending transporter quote',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModalCostRow(
+                        'Platform Service Fee (5%)',
+                        '${platformServiceFee.toStringAsFixed(0)} XAF',
+                      ),
+                      const Divider(height: 20, color: Color(0xFFE2E8F0)),
+                      _buildModalCostRow(
+                        'Total Escrow Locked',
+                        totalDepository == null
+                            ? 'Pending quote approval'
+                            : '${totalDepository.toStringAsFixed(0)} XAF',
+                        isTotal: true,
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                children: [
-                  _buildModalCostRow(
-                    'Produce Harvest Lot',
-                    item['title'],
-                    isBold: true,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildModalCostRow(
-                    'Producer / Cooperative',
-                    item['farmerName'],
-                  ),
-                  const Divider(height: 20, color: Color(0xFFE2E8F0)),
-                  _buildModalCostRow(
-                    'Item Cost',
-                    '${price.toStringAsFixed(0)} XAF',
-                  ),
-                  const SizedBox(height: 8),
-                  _buildModalCostRow(
-                    'Freight Dispatch Fee',
-                    '${transportFee.toStringAsFixed(0)} XAF',
-                  ),
-                  const SizedBox(height: 8),
-                  _buildModalCostRow(
-                    'Deposit Buffer (2x)',
-                    '${(2 * depositBuffer).toStringAsFixed(0)} XAF',
-                  ),
-                  const Divider(height: 20, color: Color(0xFFE2E8F0)),
-                  _buildModalCostRow(
-                    'Total Escrow Locked',
-                    '${totalDepository.toStringAsFixed(0)} XAF',
-                    isTotal: true,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Row(
-              children: [
-                Icon(Icons.shield_outlined, size: 16, color: Color(0xFF0F5132)),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Funds locked in admin escrow depository until delivery confirmation.',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF64748B),
-                      fontWeight: FontWeight.w500,
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Text(
+                      'Quantity',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: quantity > 1
+                          ? () => setModalState(() => quantity -= 1)
+                          : null,
+                      icon: const Icon(Icons.remove_circle_outline),
+                    ),
+                    Text(
+                      '${quantity.toInt()} ${item['unitType']}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      onPressed: quantity < availableQuantity
+                          ? () => setModalState(() => quantity += 1)
+                          : null,
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                  ],
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Buyer self-pickup'),
+                  subtitle: Text(
+                    isSelfPickup
+                        ? 'No transport fee'
+                        : 'Delivery to $_locationDescription',
                   ),
+                  value: isSelfPickup,
+                  onChanged: (value) =>
+                      setModalState(() => isSelfPickup = value),
+                ),
+                const SizedBox(height: 16),
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.shield_outlined,
+                      size: 16,
+                      color: Color(0xFF0F5132),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Delivery orders remain pending until a transporter quote is approved.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: const BorderSide(color: Color(0xFFCBD5E1)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Color(0xFF475569),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F5132),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: quantity <= 0
+                            ? null
+                            : () => _createEscrowOrder(
+                                item,
+                                quantity: quantity,
+                                transportFee: transportFee,
+                                isSelfPickup: isSelfPickup,
+                                deliveryAddress: _locationDescription,
+                              ),
+                        icon: const Icon(Icons.verified_user_rounded, size: 18),
+                        label: const Text(
+                          'Create Order',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(
-                        color: Color(0xFF475569),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F5132),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    onPressed: () => _createEscrowOrder(item),
-                    icon: const Icon(Icons.verified_user_rounded, size: 18),
-                    label: const Text(
-                      'Lock Escrow Order',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Future<void> _createEscrowOrder(Map<String, dynamic> item) async {
+  Future<void> _createEscrowOrder(
+    Map<String, dynamic> item, {
+    required double quantity,
+    required double? transportFee,
+    required bool isSelfPickup,
+    required String deliveryAddress,
+  }) async {
     final buyerId = ApiService.globalUserId;
     final productId = item['id'];
     if (buyerId == null || productId is! num) {
@@ -469,9 +615,10 @@ class _BuyerDashboardState extends State<BuyerDashboard>
       final response = await ApiService.createEscrowOrder(
         buyerId: buyerId,
         productId: productId.toInt(),
-        quantity: 1,
-        transportFee: 5000,
-        deliveryAddress: _locationDescription,
+        quantity: quantity,
+        transportFee: transportFee,
+        isSelfPickup: isSelfPickup,
+        deliveryAddress: deliveryAddress,
       );
       if (!mounted) return;
 
@@ -539,8 +686,19 @@ class _BuyerDashboardState extends State<BuyerDashboard>
         : displayName.trim().substring(0, 1).toUpperCase();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
+      backgroundColor: Colors.black, // Fallback color
+      body: Stack(
+        children: [
+          // BOTTOM LAYER: Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/farm_background.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0F382C)),
+            ),
+          ),
+          // TOP LAYER: Original UI (untouched)
+          SafeArea(
         top: false,
         child: Stack(
           children: [
@@ -712,6 +870,7 @@ class _BuyerDashboardState extends State<BuyerDashboard>
                   ],
                 ),
 
+                SliverToBoxAdapter(child: _buildQuoteOrders()),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                   sliver: SliverList(
@@ -1405,6 +1564,8 @@ class _BuyerDashboardState extends State<BuyerDashboard>
           ],
         ),
       ),
+        ],
+      ),
     );
   }
 
@@ -1446,19 +1607,16 @@ class _BuyerDashboardState extends State<BuyerDashboard>
   }
 
   Widget _buildHarvestCard(Map<String, dynamic> item) {
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.55),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1851,6 +2009,8 @@ class _BuyerDashboardState extends State<BuyerDashboard>
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

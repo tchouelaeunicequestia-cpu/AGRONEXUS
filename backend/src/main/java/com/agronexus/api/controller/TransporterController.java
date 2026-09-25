@@ -2,6 +2,14 @@
 package com.agronexus.api.controller;
 
 import com.agronexus.api.repository.OrderRepository;
+import com.agronexus.api.entity.EscrowStatus;
+import com.agronexus.api.entity.Order;
+import com.agronexus.api.entity.User;
+import com.agronexus.api.service.EscrowEngineService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,15 +18,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/transporter")
 public class TransporterController {
 
     private final OrderRepository orderRepository;
+    private final EscrowEngineService escrowEngineService;
 
-    public TransporterController(OrderRepository orderRepository) {
+    public TransporterController(OrderRepository orderRepository, EscrowEngineService escrowEngineService) {
         this.orderRepository = orderRepository;
+        this.escrowEngineService = escrowEngineService;
     }
 
     @GetMapping("/metrics")
@@ -30,5 +42,36 @@ public class TransporterController {
             "odometer", "142 km",
             "jobs", 2
         ));
+    }
+
+    @GetMapping("/quote-requests")
+    @PreAuthorize("hasRole('TRANSPORTER')")
+    public ResponseEntity<List<Map<String, Object>>> getQuoteRequests() {
+        return ResponseEntity.ok(orderRepository.findAll().stream()
+                .filter(order -> order.getEscrowStatus() == EscrowStatus.TRANSPORT_QUOTE_PENDING)
+                .map(this::orderSummary)
+                .collect(Collectors.toList()));
+    }
+
+    @PostMapping("/orders/{orderCode}/quote")
+    @PreAuthorize("hasRole('TRANSPORTER')")
+    public ResponseEntity<Map<String, Object>> submitQuote(
+            @PathVariable String orderCode,
+            @RequestBody Map<String, Object> payload,
+            @AuthenticationPrincipal User transporter) {
+        BigDecimal fee = new BigDecimal(payload.get("transportFee").toString());
+        Order order = escrowEngineService.submitTransportQuote(orderCode, transporter, fee);
+        return ResponseEntity.ok(orderSummary(order));
+    }
+
+    private Map<String, Object> orderSummary(Order order) {
+        return Map.of(
+                "orderCode", order.getOrderCode(),
+                "productTitle", order.getProduct().getTitle(),
+                "quantity", order.getQuantity(),
+                "itemCost", order.getItemCost(),
+                "transportFee", order.getTransportFee(),
+                "deliveryAddress", order.getDeliveryAddress(),
+                "status", order.getEscrowStatus().name());
     }
 }

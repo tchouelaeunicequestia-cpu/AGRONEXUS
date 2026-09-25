@@ -12,6 +12,7 @@ package com.agronexus.api.entity;
  */
 public enum EscrowStatus {
     PENDING,
+    TRANSPORT_QUOTE_PENDING,
     HELD_IN_ESCROW,
     READY_FOR_PICKUP,        // Buyer chose self-pickup; produce ready at farm gate
     SELF_PICKUP_COMPLETED,   // Buyer collected produce directly from farmer

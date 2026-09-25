@@ -14,7 +14,7 @@ The platform is currently in the **Working Prototype / MVP Foundation Stage**:
 |---|---|---:|
 | 🔐 **Auth & Roles (Epic 1)** | Multi-role registration & login, JWT access/refresh tokens, BCrypt strength 12, strict validation, email/phone OTP challenges, hashed national ID, and fail-closed biometric/GPS checks. | 75% |
 | 🌽 **Produce Catalog & Spatial (Epic 2)** | PostGIS `Point` produce listings (`ProductController.java`), Buyer `ST_DWithin` radial spatial search (5km–100km). | 65% |
-| 💳 **Escrow & Payments (Epic 3)** | `EscrowEngineService` formula (1.5% MoMo buffer), Order entity, lock/disburse endpoints. Frontend checkout connection pending. | 45% |
+| 💳 **Escrow & Payments (Epic 3)** | `EscrowEngineService` formula (5% platform service fee), Order entity, lock/disburse endpoints. Frontend checkout connection pending. | 45% |
 | 🚚 **Transport & Logistics (Epic 4)** | Data model & `EscrowStatus` state enum created. Transporter UI & dispatch execution pending. | 10% |
 | 🌡️ **IoT Storage Telemetry (Epic 5)** | Spring Boot telemetry REST ingestion (`TelemetryController.java`), safety threshold evaluation. UI dashboard seeded fallback data. | 50% |
 | 🤖 **Domain-Guarded AI (Epic 6)** | Keyword-based agricultural prompt guardrail prototype (`AiAssistantController.java`). `pgvector` HNSW index & LLM integration pending. | 35% |

@@ -312,7 +312,7 @@ Digital intervention in agriculture has expanded across three primary domains: f
 
 #### 2.3.1 Escrow Payment Architectures in Agriculture
 To resolve trust deficits between unfamiliar trading partners in remote agricultural regions, AgroNexus utilizes an automated financial escrow model. Under this paradigm, buyer funds are held securely in a central administrative account upon order placement. Release of funds follows a multi-party authorization workflow:
-- **Fund Allocation Formula**: $\text{Total Depository} = \text{Item Cost} + \text{Transport Fee} + (2 \times \text{Deposit Buffer})$
+- **Fund Allocation Formula**: $\text{Total Depository} = \text{Item Cost} + \text{Transport Fee} + \text{5\% Platform Service Fee}$
 - **Release Conditions**: Funds are disbursed to the seller and transporter only upon cryptographic or multi-role confirmation of successful product receipt and transport delivery.
 - **Dispute Resolution**: In cases of damaged goods or non-delivery, admin arbitration evaluates telemetric storage logs and photo evidence to determine partial or full refund allocation.
 

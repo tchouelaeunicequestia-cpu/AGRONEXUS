@@ -1,5 +1,6 @@
 // lib/screens/dashboards/agronomist_dashboard.dart
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -82,7 +83,7 @@ class _AgronomistDashboardState extends State<AgronomistDashboard> {
     final user = authProvider.currentUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE9FFED),
+      backgroundColor: Colors.black, // Fallback color
       appBar: AppBar(
         backgroundColor: Colors.white.withValues(alpha: 0.85),
         elevation: 0,
@@ -161,7 +162,18 @@ class _AgronomistDashboardState extends State<AgronomistDashboard> {
           const SizedBox(width: 8),
         ],
       ),
-      body: _isLoading
+      body: Stack(
+        children: [
+          // BOTTOM LAYER: Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/farm_background.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0F382C)),
+            ),
+          ),
+          // TOP LAYER: Original UI (untouched)
+          _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFF003820)),
             )
@@ -564,6 +576,8 @@ class _AgronomistDashboardState extends State<AgronomistDashboard> {
                 ),
               ),
             ),
+        ],
+      ),
     );
   }
 
@@ -573,10 +587,14 @@ class _AgronomistDashboardState extends State<AgronomistDashboard> {
     final temperature = alert['temperature']?.toString() ?? '--';
     final gas = alert['gasLevel']?.toString() ?? '--';
 
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF4F2),
+        color: const Color(0xFFFFF4F2).withOpacity(0.6),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFFFB4AB)),
       ),
@@ -627,6 +645,8 @@ class _AgronomistDashboardState extends State<AgronomistDashboard> {
           ),
         ],
       ),
+        ),
+      ),
     );
   }
 
@@ -637,14 +657,16 @@ class _AgronomistDashboardState extends State<AgronomistDashboard> {
     IconData icon,
     Color color,
   ) {
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.55),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6),
-        ],
+        border: Border.all(color: Colors.white.withOpacity(0.4)),
       ),
       child: Row(
         children: [
@@ -688,6 +710,8 @@ class _AgronomistDashboardState extends State<AgronomistDashboard> {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

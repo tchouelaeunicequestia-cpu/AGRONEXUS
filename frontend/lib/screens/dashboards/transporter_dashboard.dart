@@ -1,5 +1,6 @@
 // lib/screens/dashboards/transporter_dashboard.dart
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -19,12 +20,103 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
   bool _isLoading = true;
   Map<String, dynamic> _metrics = {};
   PositionData? _livePosition;
+  List<Map<String, dynamic>> _quoteRequests = [];
 
   @override
   void initState() {
     super.initState();
     _fetchMetrics();
+    _fetchQuoteRequests();
     _loadLivePosition();
+  }
+
+  Future<void> _fetchQuoteRequests() async {
+    try {
+      final orders = await ApiService.getTransportQuoteRequests();
+      if (mounted) setState(() => _quoteRequests = orders);
+    } catch (_) {}
+  }
+
+  Future<void> _showQuoteDialog(Map<String, dynamic> order) async {
+    final controller = TextEditingController();
+    final fee = await showDialog<double>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Quote ${order['orderCode']}'),
+        content: TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'Transport fee (XAF)',
+            prefixIcon: Icon(Icons.local_shipping),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(context, double.tryParse(controller.text)),
+            child: const Text('Submit quote'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (fee == null || fee < 0) return;
+    try {
+      await ApiService.submitTransportQuote(
+        orderCode: order['orderCode'],
+        transportFee: fee,
+      );
+      _showCustomSnackBar('Quote submitted to the buyer.');
+      await _fetchQuoteRequests();
+    } catch (error) {
+      _showCustomSnackBar(error.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Widget _buildQuoteRequests() {
+    if (_quoteRequests.isEmpty) return const SizedBox.shrink();
+    return ClipRRect(
+  borderRadius: BorderRadius.circular(16),
+  child: BackdropFilter(
+    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+    child: Card( color: Colors.white.withOpacity(0.55),
+
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Delivery quote requests',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            ..._quoteRequests.map(
+              (order) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  '${order['productTitle']} · ${order['quantity']} units',
+                ),
+                subtitle: Text(
+                  '${order['deliveryAddress']}\n${order['orderCode']}',
+                ),
+                isThreeLine: true,
+                trailing: FilledButton(
+                  onPressed: () => _showQuoteDialog(order),
+                  child: const Text('Quote'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ),
+);
   }
 
   Future<void> _loadLivePosition() async {
@@ -69,7 +161,7 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
     final user = authProvider.currentUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE9FFED),
+      backgroundColor: Colors.black, // Fallback color
       appBar: AppBar(
         backgroundColor: Colors.white.withValues(alpha: 0.85),
         elevation: 0,
@@ -148,7 +240,18 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
           const SizedBox(width: 8),
         ],
       ),
-      body: _isLoading
+      body: Stack(
+        children: [
+          // BOTTOM LAYER: Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/farm_background.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0F382C)),
+            ),
+          ),
+          // TOP LAYER: Original UI (untouched)
+          _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFF003820)),
             )
@@ -160,6 +263,8 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildQuoteRequests(),
+                    const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -415,6 +520,8 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
                 ),
               ),
             ),
+        ],
+      ),
     );
   }
 
@@ -576,14 +683,16 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
     IconData icon,
     Color color,
   ) {
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.55),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6),
-        ],
+        border: Border.all(color: Colors.white.withOpacity(0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -628,6 +737,8 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
             ],
           ),
         ],
+      ),
+        ),
       ),
     );
   }

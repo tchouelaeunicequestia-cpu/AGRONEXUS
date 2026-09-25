@@ -13,6 +13,18 @@ spring:
   application:
     name: agronexus-backend
 
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+
   # ==============================================================================
   # DATABASE DATASOURCE CONNECTION (Supports Supabase or Local PostgreSQL)
   # WHY: Connects Spring Data JPA to database server.
@@ -45,6 +57,8 @@ spring:
 # HOW: JWTs are signed with HMAC-SHA256 and valid for 24 hours.
 # ==============================================================================
 agronexus:
+  notifications:
+    from-address: ${MAIL_FROM_ADDRESS:no-reply@agronexus.local}
   verification:
     # Use "console" only for local development. Production must provide an
     # email/SMS adapter and set this to its delivery mode.
