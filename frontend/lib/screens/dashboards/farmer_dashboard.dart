@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../../services/auth_provider.dart';
 import '../../services/api_service.dart';
@@ -70,8 +71,19 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
     final userInitials = userName.isNotEmpty ? userName.substring(0, 1) : 'E';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFe9ffed),
-      body: CustomScrollView(
+      backgroundColor: Colors.black, // Fallback color
+      body: Stack(
+        children: [
+          // BOTTOM LAYER: Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/farm_background.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0F382C)),
+            ),
+          ),
+          // TOP LAYER: Original UI (untouched)
+          CustomScrollView(
         slivers: [
           SliverAppBar(
             pinned: true,
@@ -401,16 +413,22 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
           ),
         ],
       ),
+        ],
+      ),
     );
   }
 
   Widget _buildEscrowCard() {
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.55),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
+        border: Border.all(color: Colors.white.withOpacity(0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -427,16 +445,22 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
           const Text('Release trigger: Buyer Q/C Signoff', style: TextStyle(fontSize: 11, color: Color(0xFF64748b))),
         ],
       ),
+        ),
+      ),
     );
   }
 
   Widget _buildHarvestCard() {
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.55),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
+        border: Border.all(color: Colors.white.withOpacity(0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,16 +480,22 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
           ),
         ],
       ),
+        ),
+      ),
     );
   }
 
   Widget _buildTelemetryCard() {
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.55),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
+        border: Border.all(color: Colors.white.withOpacity(0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,6 +523,8 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
             style: const TextStyle(fontSize: 11, color: Color(0xFF64748b)),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -200,7 +201,12 @@ class _BuyerDashboardState extends State<BuyerDashboard>
 
   Widget _buildQuoteOrders() {
     if (_quoteOrders.isEmpty) return const SizedBox.shrink();
-    return Card(
+    return ClipRRect(
+  borderRadius: BorderRadius.circular(16),
+  child: BackdropFilter(
+    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+    child: Card( color: Colors.white.withOpacity(0.55),
+
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -233,7 +239,9 @@ class _BuyerDashboardState extends State<BuyerDashboard>
           ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   @override
@@ -678,8 +686,19 @@ class _BuyerDashboardState extends State<BuyerDashboard>
         : displayName.trim().substring(0, 1).toUpperCase();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
+      backgroundColor: Colors.black, // Fallback color
+      body: Stack(
+        children: [
+          // BOTTOM LAYER: Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/farm_background.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0F382C)),
+            ),
+          ),
+          // TOP LAYER: Original UI (untouched)
+          SafeArea(
         top: false,
         child: Stack(
           children: [
@@ -1545,6 +1564,8 @@ class _BuyerDashboardState extends State<BuyerDashboard>
           ],
         ),
       ),
+        ],
+      ),
     );
   }
 
@@ -1586,19 +1607,16 @@ class _BuyerDashboardState extends State<BuyerDashboard>
   }
 
   Widget _buildHarvestCard(Map<String, dynamic> item) {
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.55),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1991,6 +2009,8 @@ class _BuyerDashboardState extends State<BuyerDashboard>
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

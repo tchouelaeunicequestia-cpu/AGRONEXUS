@@ -1,7 +1,7 @@
 // lib/screens/login_screen.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../services/auth_provider.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _keepSessionActive = true;
@@ -137,157 +138,186 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFf8fafc),
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: Column(
-              children: [
-                // Top App Navigation / Header Bar
-                Container(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0,
-                    vertical: 12.0,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF16a34a),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.eco_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'AgroNexus',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 18,
-                                      color: Color(0xFF0f172a),
+      backgroundColor: Colors.black, // Fallback color
+      body: Stack(
+        children: [
+          // BOTTOM LAYER: Background Image
+          Positioned.fill(
+            child: Image.network(
+              'https://img.freepik.com/premium-photo/agriculture-project-africa_943281-36244.jpg?w=2000',
+              fit: BoxFit.cover,
+              // Show a dark placeholder while the image is fetching
+              // instead of a blank/white flash.
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(color: const Color(0xFF0f5132));
+              },
+              // If the network image ever fails to load (no connection,
+              // link expires, hotlink blocked, etc.), fall back to a
+              // solid brand-color background instead of a broken-image
+              // icon or crash.
+              errorBuilder: (context, error, stackTrace) {
+                return Container(color: const Color(0xFF0f5132));
+              },
+            ),
+          ),
+          // TOP LAYER: Main UI
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: Column(
+                  children: [
+                    // Top App Navigation / Header Bar (Frosted Glass)
+                    ClipRRect(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                        child: Container(
+                          color: Colors.black.withOpacity(0.6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24.0,
+                            vertical: 12.0,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF16a34a),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(
+                                        Icons.eco_rounded,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
                                     ),
+                                    const SizedBox(width: 12),
+                                    const Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'AgroNexus',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 18,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Identity & RBAC Access Gateway',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.white70,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
                                   ),
-                                  Text(
-                                    'Identity & RBAC Access Gateway',
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                                  ),
+                                  child: const Text(
+                                    'BEAC / CEMAC Ready',
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: Color(0xFF64748b),
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Flexible(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFdcf4e1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFb8e7c8)),
-                          ),
-                          child: const Text(
-                            'BEAC / CEMAC Ready',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF006c49),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Main Responsive Container
-                Expanded(
-                  child: Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16.0),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1100),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: const Color(0xFFe2e8f0)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 24,
-                                offset: const Offset(0, 10),
+                                ),
                               ),
                             ],
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: LayoutBuilder(
-                            builder: (context, boxConstraints) {
-                              final isWide = boxConstraints.maxWidth > 850;
-                              if (isWide) {
-                                return IntrinsicHeight(
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      Expanded(
-                                        flex: 5,
-                                        child: _buildLeftTeaserPanel(),
-                                      ),
-                                      Expanded(
-                                        flex: 7,
-                                        child: _buildRightLoginForm(
-                                          isDesktop: true,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              } else {
-                                return Column(
-                                  children: [
-                                    _buildLeftTeaserPanel(),
-                                    _buildRightLoginForm(isDesktop: false),
-                                  ],
-                                );
-                              }
-                            },
                           ),
                         ),
                       ),
                     ),
-                  ),
+                    
+                    // Main Responsive Container (Frosted Glass)
+                    Expanded(
+                      child: Center(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(16.0),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1100),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: LayoutBuilder(
+                                    builder: (context, boxConstraints) {
+                                      final isWide = boxConstraints.maxWidth > 850;
+                                      if (isWide) {
+                                        return IntrinsicHeight(
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                                            children: [
+                                              Expanded(
+                                                flex: 5,
+                                                child: _buildLeftTeaserPanel(),
+                                              ),
+                                              Expanded(
+                                                flex: 7,
+                                                child: _buildRightLoginForm(
+                                                  isDesktop: true,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      } else {
+                                        return Column(
+                                          children: [
+                                            _buildLeftTeaserPanel(),
+                                            _buildRightLoginForm(isDesktop: false),
+                                          ],
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -301,7 +331,7 @@ class _LoginScreenState extends State<LoginScreen>
           ),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            Colors.black.withValues(alpha: 0.45),
+            Colors.black.withOpacity(0.45),
             BlendMode.darken,
           ),
         ),
@@ -320,10 +350,10 @@ class _LoginScreenState extends State<LoginScreen>
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.4),
+                  color: Colors.black.withOpacity(0.4),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: Colors.white.withOpacity(0.2),
                   ),
                 ),
                 child: Row(
@@ -384,7 +414,7 @@ class _LoginScreenState extends State<LoginScreen>
               _buildFeatureHighlightCard(
                 icon: Icons.radar,
                 title: 'PostGIS Radial Exchange',
-                description: 'Precise 5km–100km radius produce matching directly indexed in SRID 4326.',
+                description: 'Precise 5km - 100km radius produce matching directly indexed in SRID 4326.',
               ),
             ],
           ),
@@ -393,7 +423,7 @@ class _LoginScreenState extends State<LoginScreen>
             padding: const EdgeInsets.only(top: 16),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                top: BorderSide(color: Colors.white.withOpacity(0.15)),
               ),
             ),
             child: const Wrap(
@@ -429,9 +459,9 @@ class _LoginScreenState extends State<LoginScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.35),
+        color: Colors.black.withOpacity(0.35),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        border: Border.all(color: Colors.white.withOpacity(0.15)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -439,7 +469,7 @@ class _LoginScreenState extends State<LoginScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF22c55e).withValues(alpha: 0.2),
+              color: const Color(0xFF22c55e).withOpacity(0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: const Color(0xFF4ade80), size: 18),
@@ -477,7 +507,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildRightLoginForm({required bool isDesktop}) {
     return Container(
-      color: Colors.white,
+      color: Colors.transparent, // Let frosted glass show through
       padding: EdgeInsets.all(isDesktop ? 36.0 : 20.0),
       child: Form(
         key: _formKey,
@@ -497,7 +527,7 @@ class _LoginScreenState extends State<LoginScreen>
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF1e293b),
+                          color: Colors.white,
                         ),
                       ),
                       SizedBox(height: 4),
@@ -505,7 +535,7 @@ class _LoginScreenState extends State<LoginScreen>
                         'Access your verified AgroNexus workspace',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF64748b),
+                          color: Colors.white70,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -521,9 +551,9 @@ class _LoginScreenState extends State<LoginScreen>
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFf8fafc),
+                      color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFe2e8f0)),
+                      border: Border.all(color: Colors.white.withOpacity(0.2)),
                     ),
                     child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -533,7 +563,7 @@ class _LoginScreenState extends State<LoginScreen>
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF64748b),
+                            color: Colors.white70,
                           ),
                         ),
                         Text(
@@ -541,7 +571,7 @@ class _LoginScreenState extends State<LoginScreen>
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF0f5132),
+                            color: Color(0xFF6cf8bb),
                           ),
                         ),
                       ],
@@ -554,12 +584,29 @@ class _LoginScreenState extends State<LoginScreen>
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
                 labelText: 'Registered Email Address',
                 hintText: 'e.g. farmer@agronexus.io',
-                prefixIcon: Icon(
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.1),
+                labelStyle: const TextStyle(color: Colors.white70),
+                hintStyle: const TextStyle(color: Colors.white38),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Color(0xFF4ade80), width: 2),
+                ),
+                prefixIcon: const Icon(
                   Icons.email_outlined,
-                  color: Color(0xFF64748b),
+                  color: Colors.white70,
                 ),
               ),
               validator: (v) => v!.isEmpty ? 'Email is required' : null,
@@ -568,19 +615,36 @@ class _LoginScreenState extends State<LoginScreen>
             TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Password',
                 hintText: '••••••••',
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.1),
+                labelStyle: const TextStyle(color: Colors.white70),
+                hintStyle: const TextStyle(color: Colors.white38),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Color(0xFF4ade80), width: 2),
+                ),
                 prefixIcon: const Icon(
                   Icons.lock_outline_rounded,
-                  color: Color(0xFF64748b),
+                  color: Colors.white70,
                 ),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePassword
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
-                    color: const Color(0xFF64748b),
+                    color: Colors.white70,
                   ),
                   onPressed: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
@@ -598,17 +662,23 @@ class _LoginScreenState extends State<LoginScreen>
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Checkbox(
-                      value: _keepSessionActive,
-                      onChanged: (val) =>
-                          setState(() => _keepSessionActive = val ?? true),
-                      activeColor: const Color(0xFF0f5132),
+                    Theme(
+                      data: ThemeData(
+                        unselectedWidgetColor: Colors.white70,
+                      ),
+                      child: Checkbox(
+                        value: _keepSessionActive,
+                        onChanged: (val) =>
+                            setState(() => _keepSessionActive = val ?? true),
+                        activeColor: const Color(0xFF16a34a),
+                        checkColor: Colors.white,
+                      ),
                     ),
                     const Text(
                       'Keep session active (24h JWT)',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF475569),
+                        color: Colors.white70,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -617,13 +687,13 @@ class _LoginScreenState extends State<LoginScreen>
                 const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.fingerprint, size: 16, color: Color(0xFF16a34a)),
+                    Icon(Icons.fingerprint, size: 16, color: Color(0xFF6cf8bb)),
                     SizedBox(width: 4),
                     Text(
                       'Use Face-ID',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF16a34a),
+                        color: Color(0xFF6cf8bb),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -678,7 +748,7 @@ class _LoginScreenState extends State<LoginScreen>
                 children: [
                   const Text(
                     'Don\'t have an account?',
-                    style: TextStyle(color: Color(0xFF475569), fontSize: 12),
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   TextButton(
                     onPressed: () {
@@ -690,7 +760,7 @@ class _LoginScreenState extends State<LoginScreen>
                     child: const Text(
                       'Register New Role',
                       style: TextStyle(
-                        color: Color(0xFF0f5132),
+                        color: Color(0xFF6cf8bb),
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),

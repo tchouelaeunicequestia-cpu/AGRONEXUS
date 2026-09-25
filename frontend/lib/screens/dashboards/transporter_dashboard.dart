@@ -1,5 +1,6 @@
 // lib/screens/dashboards/transporter_dashboard.dart
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -79,7 +80,12 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
 
   Widget _buildQuoteRequests() {
     if (_quoteRequests.isEmpty) return const SizedBox.shrink();
-    return Card(
+    return ClipRRect(
+  borderRadius: BorderRadius.circular(16),
+  child: BackdropFilter(
+    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+    child: Card( color: Colors.white.withOpacity(0.55),
+
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -108,7 +114,9 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
           ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Future<void> _loadLivePosition() async {
@@ -153,7 +161,7 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
     final user = authProvider.currentUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE9FFED),
+      backgroundColor: Colors.black, // Fallback color
       appBar: AppBar(
         backgroundColor: Colors.white.withValues(alpha: 0.85),
         elevation: 0,
@@ -232,7 +240,18 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
           const SizedBox(width: 8),
         ],
       ),
-      body: _isLoading
+      body: Stack(
+        children: [
+          // BOTTOM LAYER: Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/farm_background.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0F382C)),
+            ),
+          ),
+          // TOP LAYER: Original UI (untouched)
+          _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFF003820)),
             )
@@ -501,6 +520,8 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
                 ),
               ),
             ),
+        ],
+      ),
     );
   }
 
@@ -662,14 +683,16 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
     IconData icon,
     Color color,
   ) {
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.55),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6),
-        ],
+        border: Border.all(color: Colors.white.withOpacity(0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -714,6 +737,8 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
             ],
           ),
         ],
+      ),
+        ),
       ),
     );
   }
