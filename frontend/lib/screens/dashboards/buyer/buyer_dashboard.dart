@@ -4,9 +4,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../services/api_service.dart';
-import '../../services/auth_provider.dart';
-import '../../services/platform_services.dart';
+import 'package:frontend/services/api_service.dart';
+import 'package:frontend/services/auth_provider.dart';
+import 'package:frontend/services/draft_service.dart';
+import 'package:frontend/services/platform_services.dart';
 import 'buyer_quote_section.dart';
 
 class BuyerDashboard extends StatefulWidget {

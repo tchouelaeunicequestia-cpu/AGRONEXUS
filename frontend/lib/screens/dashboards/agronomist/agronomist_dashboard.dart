@@ -3,8 +3,10 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../services/auth_provider.dart';
-import '../../services/api_service.dart';
+import 'package:frontend/services/api_service.dart';
+import 'package:frontend/services/auth_provider.dart';
+import 'package:frontend/services/draft_service.dart';
+import 'package:frontend/services/platform_services.dart';
 
 class AgronomistDashboard extends StatefulWidget {
   const AgronomistDashboard({super.key});

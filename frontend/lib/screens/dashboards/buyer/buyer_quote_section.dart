@@ -1,7 +1,10 @@
 // lib/screens/dashboards/buyer_quote_section.dart
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import '../../services/api_service.dart';
+import 'package:frontend/services/api_service.dart';
+import 'package:frontend/services/auth_provider.dart';
+import 'package:frontend/services/draft_service.dart';
+import 'package:frontend/services/platform_services.dart';
 
 class BuyerQuoteSection extends StatefulWidget {
   final List<Map<String, dynamic>> quoteOrders;
