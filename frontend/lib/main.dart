@@ -1,12 +1,11 @@
-// lib/main.dart (Updated Router Guard Section)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
-import 'screens/dashboards/farmer_dashboard.dart';
-import 'screens/dashboards/buyer_dashboard.dart';
-import 'screens/dashboards/transporter_dashboard.dart';
-import 'screens/dashboards/agronomist_dashboard.dart';
-import 'screens/dashboards/admin_dashboard.dart';
+import 'screens/dashboards/farmer/farmer_dashboard.dart';
+import 'screens/dashboards/buyer/buyer_dashboard.dart';
+import 'screens/dashboards/transporter/transporter_dashboard.dart';
+import 'screens/dashboards/agronomist/agronomist_dashboard.dart';
+import 'screens/dashboards/admin/admin_dashboard.dart';
 import 'services/auth_provider.dart';
 import 'theme/app_theme.dart';
 
