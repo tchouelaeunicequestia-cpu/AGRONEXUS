@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:provider/provider.dart';
-import '../../services/auth_provider.dart';
-import '../../services/api_service.dart';
-import '../../services/draft_service.dart';
-import '../../services/platform_services.dart';
-import '../produce/add_produce_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:frontend/services/api_service.dart';
+import 'package:frontend/services/auth_provider.dart';
+import 'package:frontend/services/draft_service.dart';
+import 'package:frontend/services/platform_services.dart';
+import 'package:frontend/screens/produce/add_produce_screen.dart';
 
 class FarmerDashboard extends StatefulWidget {
   const FarmerDashboard({super.key});

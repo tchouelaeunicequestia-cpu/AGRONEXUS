@@ -1,11 +1,13 @@
-// lib/screens/dashboards/transporter_dashboard.dart
+// lib/screens/dashboards/transporter/transporter_dashboard.dart
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:convert';
 import 'package:provider/provider.dart';
-import '../../services/auth_provider.dart';
-import '../../services/api_service.dart';
-import '../../services/platform_services.dart';
+import 'package:frontend/services/api_service.dart';
+import 'package:frontend/services/auth_provider.dart';
+import 'package:frontend/services/draft_service.dart';
+import 'package:frontend/services/platform_services.dart';
+import 'transporter_waypoint_screen.dart';
 
 class TransporterDashboard extends StatefulWidget {
   const TransporterDashboard({super.key});
@@ -465,18 +467,47 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
                                           ],
                                         ),
                                         const SizedBox(height: 14),
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton.icon(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFF16A34A),
-                                              foregroundColor: Colors.white,
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: ElevatedButton.icon(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: const Color(0xFF16A34A),
+                                                  foregroundColor: Colors.white,
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                ),
+                                                onPressed: () => _showQuoteDialog(order),
+                                                icon: const Icon(Icons.local_shipping, size: 16),
+                                                label: const Text('Submit Quote'),
+                                              ),
                                             ),
-                                            onPressed: () => _showQuoteDialog(order),
-                                            icon: const Icon(Icons.local_shipping, size: 16),
-                                            label: const Text('Submit Freight Quote'),
-                                          ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: ElevatedButton.icon(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.blueAccent,
+                                                  foregroundColor: Colors.white,
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                ),
+                                                onPressed: () {
+                                                  final orderId = order['orderCode'] ?? order['orderId'] ?? 'ORD-REF';
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) => TransporterWaypointScreen(
+                                                        orderId: orderId,
+                                                        onWaypointUpdated: () {
+                                                          _fetchAllData();
+                                                        },
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                                icon: const Icon(Icons.pin_drop, size: 16),
+                                                label: const Text('GPS Waypoint'),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),

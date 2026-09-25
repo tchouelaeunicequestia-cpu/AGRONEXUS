@@ -1,6 +1,6 @@
 // lib/services/api_service.dart
 import 'dart:convert';
-
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'api_constants.dart' as api_constants;
@@ -355,5 +355,78 @@ class ApiService {
       throw Exception('Unable to load your quote orders.');
     }
     return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+  }
+
+  // --- PHASE 4.3: MULTI-PARTY HANDOVER & WAYPOINT METHODS ---
+
+  /// 1. Farmer Dispatch Signoff
+  static Future<bool> farmerSignoffDispatch(String orderId, String token) async {
+    try {
+      final response = await authenticatedRequest(
+        '/api/v1/farmer/orders/$orderId/dispatch',
+        method: 'POST',
+        token: token,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Farmer Dispatch Error: $e');
+      return false;
+    }
+  }
+
+  /// 2. Transporter Delivery Confirmation
+  static Future<bool> transporterConfirmDelivery(String orderId, String token) async {
+    try {
+      final response = await authenticatedRequest(
+        '/api/v1/transporter/orders/$orderId/deliver',
+        method: 'POST',
+        token: token,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Transporter Delivery Error: $e');
+      return false;
+    }
+  }
+
+  /// 3. Buyer Final Inspection & Escrow Release Signoff
+  static Future<bool> buyerReleaseEscrow(String orderId, String token) async {
+    try {
+      final response = await authenticatedRequest(
+        '/api/v1/escrow/orders/$orderId/release',
+        method: 'POST',
+        token: token,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Escrow Release Error: $e');
+      return false;
+    }
+  }
+
+  /// 4. Transporter Intermediate Waypoint Update
+  static Future<bool> updateTransportWaypoint({
+    required String orderId,
+    required double latitude,
+    required double longitude,
+    required String waypointNote,
+    String? token,
+  }) async {
+    try {
+      final response = await authenticatedRequest(
+        '/api/v1/transporter/orders/$orderId/waypoint',
+        method: 'POST',
+        body: {
+          'latitude': latitude,
+          'longitude': longitude,
+          'waypointNote': waypointNote,
+        },
+        token: token,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Waypoint Update Error: $e');
+      return false;
+    }
   }
 }
