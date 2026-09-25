@@ -19,7 +19,7 @@ import java.util.UUID;
  * WHY: Enforces transparent escrow fees and payouts.
  * HOW: Routes escrow deposits to official Admin Mobile Money Wallets:
  *      - Orange Money Escrow Wallet: +237 694002750
- *      - MTN MoMo Escrow Wallet:     +237 651305141
+ *      - MTN MoMo Escrow Wallet:    +237 651305141
  *      Generates instant admin notifications including the Farmer's direct registered phone number.
  * ==============================================================================
  */
@@ -168,10 +168,10 @@ public class EscrowEngineService {
     }
 
     /**
-     * Disburse Escrow Funds upon Verified Order Completion
+     * Disburse Escrow Funds upon Verified Order Completion (85% Farmer / 15% Transporter Split)
      */
     @Transactional
-    public Order disburseEscrowFunds(String orderCode) {
+    public Map<String, Object> disburseEscrowFunds(String orderCode) {
         Order order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
@@ -179,7 +179,24 @@ public class EscrowEngineService {
             throw new IllegalStateException("Escrow funds already disbursed for this order.");
         }
 
+        BigDecimal totalPool = order.getTotalEscrowAmount() != null ? order.getTotalEscrowAmount() : BigDecimal.ZERO;
+
+        // Enforce 85% Farmer and 15% Transporter Split calculation
+        BigDecimal farmerShare = totalPool.multiply(new BigDecimal("0.85"))
+                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal transporterShare = totalPool.multiply(new BigDecimal("0.15"))
+                .setScale(2, RoundingMode.HALF_UP);
+
         order.setEscrowStatus(EscrowStatus.COMPLETED);
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        // Professional audit and disbursement log structure for the admin console
+        return Map.of(
+            "order", savedOrder,
+            "totalDisbursedPool", totalPool,
+            "farmerPayout", farmerShare,
+            "transporterPayout", transporterShare,
+            "status", "SUCCESS"
+        );
     }
 }
