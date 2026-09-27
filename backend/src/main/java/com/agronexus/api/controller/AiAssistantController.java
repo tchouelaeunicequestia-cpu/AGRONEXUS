@@ -21,35 +21,43 @@ import java.util.Map;
 public class AiAssistantController {
 
     private static final List<String> ALLOWED_KEYWORDS = List.of(
-            "crop", "maize", "cassava", "storage", "disease", "fao", "usda",
-            "pest", "temperature", "humidity", "post-harvest", "fertilizer", "harvest"
+        "crop", "maize", "fao", "post-harvest", "storage", "temperature", 
+        "humidity", "cocoa", "grain", "mold", "pest", "aflatoxin", "harvest"
     );
 
-    // POST /api/v1/ai/query — Query the domain-guarded agricultural AI assistant
     @PostMapping("/query")
-    public ResponseEntity<?> askAiAssistant(@RequestBody Map<String, String> payload) {
-        String query = payload.getOrDefault("query", "").toLowerCase();
+    public ResponseEntity<Map<String, Object>> queryAssistant(@RequestBody Map<String, String> request) {
+        String query = request.getOrDefault("query", "").toLowerCase();
 
-        // 1. Domain Guardrail Verification
-        boolean isAgricultural = ALLOWED_KEYWORDS.stream().anyMatch(query::contains);
+        // 1. Domain Guardrail Validation
+        boolean isAllowed = ALLOWED_KEYWORDS.stream().anyMatch(query::contains);
 
-        if (!isAgricultural) {
+        if (!isAllowed) {
             return ResponseEntity.badRequest().body(Map.of(
                 "status", "REJECTED",
-                "message", "Domain Guardrail Active: AgroNexus AI exclusively answers verified agricultural, crop preservation, and agronomy queries."
+                "answer", "Query outside approved agricultural domain. AgroNexus AI is strictly restricted to agronomy, post-harvest crop preservation, storage telemetry, and CEMAC/FAO trade standards."
             ));
         }
 
-        // 2. Synthesized Advisory Response Grounded in FAO/USDA Standards
-        String groundedResponse = "Based on FAO/USDA Storage Guidelines [Standard CS-2023]: " +
-                "To prevent post-harvest decay, maintain target relative humidity below 70% " +
-                "and ensure ambient storage temperatures stay between 12°C and 15°C.";
+        // 2. Synthesize Grounded Advisory Response (Simulated RAG Vector Retrieval)
+        String synthesizedAnswer;
+        String citation;
+
+        if (query.contains("maize") || query.contains("grain") || query.contains("storage")) {
+            synthesizedAnswer = "According to FAO post-harvest grain storage standards, maize should be dried to a moisture content below 13.5% before bagging. Maintain silo storage temperatures below 25°C and relative humidity under 70% to prevent Aspergillus flavus proliferation and aflatoxin contamination.";
+            citation = "FAO Agricultural Services Bulletin: Grain Storage Techniques & Management";
+        } else if (query.contains("cocoa") || query.contains("cash crop")) {
+            synthesizedAnswer = "Cocoa beans must undergo proper fermentation followed by sun-drying until internal moisture drops to 7%. Store in jute bags stacked on wooden pallets with a minimum 50cm clearance from warehouse walls to ensure continuous aeration.";
+            citation = "UNECE / ICCO Standard Guidelines for Cocoa Post-Harvest Handling";
+        } else {
+            synthesizedAnswer = "General agronomic advisory: Ensure continuous monitoring of environmental parameters via your IoT storage nodes. Keep relative humidity within safe thresholds (60%-75%) to safeguard stored yields against spoilage.";
+            citation = "AgroNexus Cyber-Physical Storage Framework & USDA Guidelines";
+        }
 
         return ResponseEntity.ok(Map.of(
-                "status", "SUCCESS",
-                "query", payload.get("query"),
-                "response", groundedResponse,
-                "citationSource", "FAO Agricultural Handbook No. 66 / USDA Guidelines"
+            "status", "APPROVED",
+            "answer", synthesizedAnswer,
+            "citation", citation
         ));
     }
 }
