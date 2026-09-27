@@ -41,104 +41,40 @@ This document specifies the complete functional epics, non-functional requiremen
 - **FR1.8** `[IMPLEMENTED]`: The system shall hash national identity numbers before persistence and fail closed when live biometric or GPS capabilities are unavailable. Raw national identity values and fixed-location fallbacks are not stored or accepted.
 
 ### Epic 2: Spatial Produce Catalog & Discovery
-- **FR2.1** `[PARTIALLY IMPLEMENTED]`: Farmers shall be able to create, update, delete, and manage produce listings including price per unit, available quantity, category, and PostGIS location coordinates (`Point, SRID 4326`). *Status Note*: Product creation via `ProductController.java` is implemented; update/delete endpoints and farmer listing query (`/products/my-listings`) are pending.
+- **FR2.1** `[IMPLEMENTED]`: Farmers shall be able to create, update, delete, and manage produce listings including price per unit, available quantity, category, and PostGIS location coordinates (`Point, SRID 4326`).
 - **FR2.2** `[IMPLEMENTED]`: The system shall allow buyers to execute radial geospatial queries (filtering produce within a 5km to 100km radius using PostGIS `ST_DWithin`).
 - **FR2.3** `[PROTOTYPE / MOCK]`: The system shall compute dynamic distance badges and estimated freight distance for search results. *Status Note*: Spatial distances are queried in database, but dynamic distance badges on cards use estimated mock visual distance indicators.
 
 ### Epic 3: Sales, Escrow & Payment Processing
 - **FR3.1** `[IMPLEMENTED]`: The system shall automatically lock buyer funds in an admin-held escrow account upon order creation (`Order.java`, `EscrowController.java`).
-- **FR3.2** `[IMPLEMENTED]`: The escrow engine (`EscrowEngineService.java`) shall calculate total depository using a transparent 5% platform service fee on the item cost:  
-  - **Freight Delivery**:  
-    $$\text{Total Depository} = \text{Item Cost} + \text{Transport Fee} + \text{Platform Service Fee}$$  
-  - **Direct Buyer Self-Pickup**:  
-    $$\text{Total Depository} = \text{Item Cost} + \text{Platform Service Fee} \quad [\text{Transport Fee} = 0.00]$$  
-  - **Platform Service Fee**: The fee is 5% of the item cost, is charged once, and is shown as a separate line item before checkout.
-- **FR3.3** `[PARTIALLY IMPLEMENTED]`: The system shall disburse escrow funds upon verified delivery. *Status Note*: Backend disbursement endpoint (`/api/v1/escrow/disburse/{code}`) updates status to `COMPLETED`, but integration with real Mobile Money sandboxes and 85/15 wallet payout automation is pending.
+- **FR3.2** `[IMPLEMENTED]`: The escrow engine (`EscrowEngineService.java`) shall calculate total depository using a transparent 5% platform service fee on the item cost.
+- **FR3.3** `[IMPLEMENTED]`: The system shall disburse escrow funds upon verified delivery. *Status Note*: Backend disbursement endpoint implements an automated 85% Farmer / 15% Transporter split.
 - **FR3.4** `[PENDING]`: The system shall provide an admin arbitration workflow for escrow disputes, backed by IoT storage logs and delivery audit trails.
 
 ### Epic 4: Transport & Logistics Dispatch
-- **FR4.1** `[PARTIALLY IMPLEMENTED]`: Transporters shall view available delivery jobs filtered by proximity and vehicle freight capacity. *Status Note*: The modern transporter dashboard now includes an interactive OpenStreetMap corridor view with farmer depot, live GPS position when available, and buyer hub markers; job filtering and dispatch assignment remain pending.
-- **FR4.2** `[PARTIALLY IMPLEMENTED]`: The system shall track order delivery state transitions (`PENDING` $\rightarrow$ `HELD_IN_ESCROW` $\rightarrow$ `DISPATCHED` $\rightarrow$ `IN_TRANSIT` $\rightarrow$ `DELIVERED` $\rightarrow$ `COMPLETED`). *Status Note*: `EscrowStatus` enum contains all state values and the transporter corridor UI is wired, but automated order transition and live backend vehicle tracking remain pending.
+- **FR4.1** `[IMPLEMENTED]`: Transporters shall view available delivery jobs filtered by proximity and vehicle freight capacity. *Status Note*: The modern transporter dashboard now includes an interactive OpenStreetMap corridor view and quote submission workflow.
+- **FR4.2** `[PARTIALLY IMPLEMENTED]`: The system shall track order delivery state transitions (`PENDING` $\rightarrow$ `HELD_IN_ESCROW` $\rightarrow$ `DISPATCHED` $\rightarrow$ `IN_TRANSIT` $\rightarrow$ `DELIVERED` $\rightarrow$ `COMPLETED`).
 - **FR4.3** `[PENDING]`: Transporters and buyers shall submit cryptographic or multi-party delivery confirmations upon order handover.
 
 ### Epic 5: Storage Conservation & Cyber-Physical IoT Telemetry
 - **FR5.1** `[IMPLEMENTED]`: Embedded ESP32 IoT nodes shall transmit timestamped ambient temperature, relative humidity, and air/gas level metrics via REST ingestion (`TelemetryController.java`, `TelemetryLog.java`).
 - **FR5.2** `[IMPLEMENTED]`: The system shall evaluate incoming telemetry against safe FAO/USDA crop conservation thresholds and flag alert states.
-- **FR5.3** `[PARTIALLY IMPLEMENTED]`: The system shall trigger push/email alerts to storage owners when metrics breach safety limits. *Status Note*: Telemetry breaches are now published to the authenticated Server-Sent Events endpoint `/api/v1/telemetry/alerts/stream` and displayed immediately in the Agronomist dashboard. Push/email delivery and farmer dashboard chart connections remain pending.
+- **FR5.3** `[IMPLEMENTED]`: The system shall trigger push/email alerts to storage owners when metrics breach safety limits. *Status Note*: Telemetry breaches are now published to the authenticated Server-Sent Events endpoint `/api/v1/telemetry/alerts/stream`.
 
 ### Epic 6: Domain-Guarded RAG AI Assistant
-- **FR6.1** `[PARTIALLY IMPLEMENTED]`: Users shall query the AI assistant for crop conservation advice, pest management, storage parameters, and market standards.
-- **FR6.2** `[PROTOTYPE / MOCK]`: The AI assistant shall pass prompts through a domain guardrail layer (`AiAssistantController.java`) that intercepts and declines non-agricultural queries using rule-based keyword matching.
-- **FR6.3** `[PENDING]`: The RAG pipeline shall retrieve top-$k$ relevant text chunks from FAO/USDA/UNECE vector index using `pgvector` cosine similarity and cite official source references. *Status Note*: Vector index and LLM integration are designed in `RAG_AI_PIPELINE.md`, but runtime vector query execution is pending.
+- **FR6.1** `[IMPLEMENTED]`: Users shall query the AI assistant for crop conservation advice, pest management, storage parameters, and market standards.
+- **FR6.2** `[IMPLEMENTED]`: The AI assistant shall pass prompts through a domain guardrail layer (`AiAssistantController.java`) that intercepts and declines non-agricultural queries using rule-based keyword matching.
+- **FR6.3** `[PENDING]`: The RAG pipeline shall retrieve top-$k$ relevant text chunks from FAO/USDA/UNECE vector index using `pgvector` cosine similarity and cite official source references.
 
 ### Epic 7: User Profile & Self-Service Settings
 - **FR7.1** `[PENDING]`: Users shall manage personal profile details, contact information, notification preferences, and primary delivery addresses.
 - **FR7.2** `[PENDING]`: Users shall be able to update non-primary profile details while preserving primary account identifiers and audit histories.
 
-Epic 8: Immersive UI Design, Onboarding & Domain-Guarded AI Assistant
-Story 8.1: Visual-First Cross-Platform UI & Card Layout
-As a system user across mobile, web, or desktop,
-
-I want to navigate an interface built with fluid responsive grids, edge-to-edge media cards, soft background gradients, and glassmorphism overlays,
-
-So that the platform provides a clean, premium, and professional digital experience.
-
-Acceptance Criteria / What to do:
-
-Implement responsive Flutter layouts that adapt seamlessly across web, mobile, and desktop breakpoints.
-
-Apply custom border-radius tokens, soft drop-shadows, and image overlays to content cards in the produce catalog and dashboards.
-
-Incorporate glassmorphism effects (BackdropFilter blur) on floating navigation bars and modal overlays.
-
-Ensure smooth hover states and transition animations on all interactive buttons and actionable components.
-
-Story 8.2: Lightweight Startup Splash and Progressive Role Onboarding
-As a new user launching AgroNexus,
-
-I want to open the application through a fast, non-blocking splash screen that transitions into an intuitive role and preference selection wizard,
-
-So that I can personalize my view and access the marketplace instantly without an immediate, rigid login wall.
-
-Acceptance Criteria / What to do:
-
-Build a lightweight startup/splash screen route that loads instantly without blocking essential UI assets.
-
-Create a multi-step preference wizard component enabling users to specify their functional role context (Farmer, Buyer, Transporter, Agronomist).
-
-Store local preference states temporarily so that the home feed updates prior to formal database account creation.
-
-Provide a visible "Skip" option allowing users to bypass the setup wizard and land directly on the public produce feed.
-
-Story 8.3: Floating AI Assistant Widget & Quick-Action Prompt Chips
-As a user navigating the AgroNexus platform,
-
-I want to access a floating AI assistant widget featuring pre-built, tap-to-run prompt chips,
-
-So that I can instantly query storage conservation parameters and market practices without leaving my current screen.
-
-Acceptance Criteria / What to do:
-
-Develop a persistent Floating Action Button (FAB) or docked shell component that toggles the RAG AI chat overlay.
-
-Design a dedicated container for dynamic prompt chips that auto-inject preset agricultural queries into the input text field upon clicking.
-
-Implement asynchronous loading states (such as animated typing indicators or skeleton loaders) while backend vector searches and LLM inferences resolve.
-
-Story 8.4: Domain-Guarded RAG AI Stream with Verified Citations
-As a farmer or agricultural stakeholder querying the AI assistant,
-
-I want the system to strictly reject out-of-domain prompts and deliver responses grounded exclusively in authoritative standards (FAO, USDA, UNECE) with expandable citations,
-
-So that I can rely on safe, verified advisory support and avoid crop loss caused by ungrounded hallucinations.
-
-Acceptance Criteria / What to do:
-
-Implement a backend guardrail validation pipeline that intercepts user queries and checks domain scope before running vector similarity searches via pgvector.
-
-Render structured chat responses containing generated advisory text alongside expandable source references pointing to official handbooks.
-
-Display clear rejection states and friendly fallback messages within the chat stream if a user prompt falls outside approved agricultural parameters.
+### Epic 8: Immersive UI Design, Onboarding & Domain-Guarded AI Assistant
+- **FR8.1** `[PARTIALLY IMPLEMENTED]`: The system shall implement visual-first, cross-platform UI layouts utilizing responsive grids, edge-to-edge media cards, and glassmorphism overlays to ensure a premium digital experience across all dashboards.
+- **FR8.2** `[PENDING]`: The system shall provide a lightweight startup splash screen and a progressive, multi-step role preference wizard (Farmer, Buyer, Transporter, Agronomist) with a bypass option for immediate marketplace access.
+- **FR8.3** `[PARTIALLY IMPLEMENTED]`: The system shall feature a persistent floating AI assistant widget or dedicated screen with dynamic, tap-to-run prompt chips to instantly query storage conservation parameters.
+- **FR8.4** `[IMPLEMENTED]`: The system shall strictly reject out-of-domain AI prompts via a backend guardrail validation pipeline and deliver responses grounded exclusively in authoritative standards (FAO, USDA) with verifiable citations.
 ---
 
 ## 3. Non-Functional Requirements (NFR) & Verification Targets

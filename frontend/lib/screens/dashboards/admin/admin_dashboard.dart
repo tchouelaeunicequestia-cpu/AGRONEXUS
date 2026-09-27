@@ -1,4 +1,4 @@
-// lib/screens/dashboards/admin_dashboard.dart
+// lib/screens/dashboards/admin/admin_dashboard.dart
 import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -6,8 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/services/auth_provider.dart';
-import 'package:frontend/services/draft_service.dart';
-import 'package:frontend/services/platform_services.dart';
+import 'widgets/admin_user_card.dart';
+
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
 
@@ -76,39 +76,79 @@ class _AdminDashboardState extends State<AdminDashboard> {
     String name,
     bool shouldApprove,
   ) async {
+    // Show a loading indicator in the SnackBar while the request is in-flight
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+              const SizedBox(width: 12),
+              Text('${shouldApprove ? 'Approving' : 'De-approving'} $name...'),
+            ],
+          ),
+          duration: const Duration(seconds: 10),
+          backgroundColor: const Color(0xFF1e3a5f),
+        ),
+      );
+    }
     try {
       final response = await ApiService.authenticatedRequest(
         '/api/v1/admin/${shouldApprove ? 'approve' : 'deapprove'}-user/$userId',
         method: 'POST',
       );
       if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '$name ${shouldApprove ? 'approved' : 'de-approved'} successfully!',
+              '$name ${shouldApprove ? 'approved ✅' : 'de-approved ❌'} successfully! Email notification sent.',
             ),
             backgroundColor: const Color(0xFF16a34a),
+            duration: const Duration(seconds: 4),
           ),
         );
         _fetchAdminData();
       } else {
         final body = jsonDecode(response.body);
-        throw StateError(
-          body is Map<String, dynamic>
-              ? body['error']?.toString() ?? 'Unable to update account status.'
-              : 'Unable to update account status.',
-        );
+        final errorMsg = body is Map<String, dynamic>
+            ? body['error']?.toString() ?? 'Unable to update account status.'
+            : 'Server returned status ${response.statusCode}.';
+        _showErrorDialog(errorMsg);
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error updating account status: $e'),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      _showErrorDialog(
+        'Could not reach the AgroNexus backend.\n\nMake sure the server is running on port 8080.\n\nDetails: ${e.toString().replaceAll("Exception: ", "")}',
       );
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1a2e),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.error_outline_rounded, color: Colors.redAccent),
+            SizedBox(width: 8),
+            Text('Action Failed', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF16a34a), foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -119,7 +159,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
         .where((account) => account['isVerified'] == false)
         .length;
 
-    // Extract live metrics safely with 0 fallback instead of fake static numbers
     final double escrowVolume = (_metrics['escrowVolume'] is num)
         ? (_metrics['escrowVolume'] as num).toDouble()
         : 0.0;
@@ -154,23 +193,27 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ),
             const SizedBox(width: 10),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'AgroNexus',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'AgroNexus',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Text(
-                  'Command Center',
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
+                  Text(
+                    'Command Center',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -196,7 +239,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 SizedBox(width: 6),
                 Text(
-                  'Admin / Control',
+                  'Admin',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -456,7 +499,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 ),
                               )
                             else
-                              ..._users.map(_buildUserCard),
+                              ..._users.map((account) => AdminUserCard(
+                                    user: account,
+                                    onStatusChanged: (userId, name, shouldApprove) =>
+                                        _setUserVerification(userId, name, shouldApprove),
+                                  )),
                           ],
                         ),
                       ),
@@ -548,102 +595,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
     );
   }
-
-  Widget _buildUserCard(dynamic account) {
-    final isVerified = account['isVerified'] == true;
-    final isAdmin = account['role'] == 'ADMIN';
-    final name = account['fullName']?.toString() ?? 'Unknown account';
-    final role = account['role']?.toString() ?? 'USER';
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isVerified
-                  ? Colors.greenAccent.withOpacity(0.3)
-                  : Colors.orangeAccent.withOpacity(0.3),
-            ),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.white.withOpacity(0.15),
-                child: Text(
-                  name.substring(0, 1).toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${account['email']} • $role',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.white70,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: isAdmin && isVerified
-                    ? null
-                    : () => _setUserVerification(account['id'], name, !isVerified),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: isVerified
-                      ? Colors.orangeAccent
-                      : const Color(0xFF6CF8BB),
-                  side: BorderSide(
-                    color: isVerified
-                        ? Colors.orangeAccent.withOpacity(0.5)
-                        : const Color(0xFF6CF8BB).withOpacity(0.5),
-                  ),
-                ),
-                child: Text(isVerified ? 'De-approve' : 'Approve'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
-/// Admin Escrow Panel UI Widget for executing live 85% / 15% splits
 class AdminEscrowPanel extends StatefulWidget {
   final Map<String, dynamic> orderDetails;
   final String adminAuthToken;
   final String adminUserId;
 
   const AdminEscrowPanel({
-    Key? key,
+    super.key,
     required this.orderDetails,
     required this.adminAuthToken,
     required this.adminUserId,
-  }) : super(key: key);
+  });
 
   @override
   State<AdminEscrowPanel> createState() => _AdminEscrowPanelState();

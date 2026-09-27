@@ -59,6 +59,7 @@ class ApiService {
     required String phoneNumber,
     required String nationalId,
     required bool biometricVerified,
+    required bool cniVerified,
     required String role,
     double? latitude,
     double? longitude,
@@ -73,6 +74,7 @@ class ApiService {
         'phoneNumber': phoneNumber,
         'nationalId': nationalId,
         'biometricVerified': biometricVerified,
+        'cniVerified': cniVerified,
         'role': role,
         'latitude': latitude ?? 3.8480,
         'longitude': longitude ?? 11.5021,
@@ -429,4 +431,20 @@ class ApiService {
       return false;
     }
   }
+
+  /// Query the AgroAI Domain-Guarded Assistant
+  static Future<Map<String, dynamic>> queryAiAssistant(String prompt) async {
+    final response = await authenticatedRequest(
+      '/api/v1/ai/query',
+      method: 'POST',
+      body: {'query': prompt},
+    );
+    // If the backend returns 200 OK or 400 Bad Request (guardrail rejection), 
+    // both contain valid JSON bodies we want to decode!
+    if (response.statusCode == 200 || response.statusCode == 400) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Failed to communicate with AgroAI Assistant (Status: ${response.statusCode})');
+  }
+
 }

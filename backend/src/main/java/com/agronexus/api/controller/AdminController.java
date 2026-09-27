@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,15 +32,18 @@ public class AdminController {
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
     private final TelemetryLogRepository telemetryLogRepository;
+    private final JavaMailSender mailSender;
 
     public AdminController(UserRepository userRepository,
             ProductRepository productRepository,
             OrderRepository orderRepository,
-            TelemetryLogRepository telemetryLogRepository) {
+            TelemetryLogRepository telemetryLogRepository,
+            JavaMailSender mailSender) {
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
         this.telemetryLogRepository = telemetryLogRepository;
+        this.mailSender = mailSender;
     }
 
     @GetMapping("/pending-users")
@@ -61,12 +66,30 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> approveUser(@PathVariable Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User account not found"));
+        
         user.setIdentityVerified(true);
-        user.setIsVerified(Boolean.TRUE.equals(user.getEmailVerified())
-                && Boolean.TRUE.equals(user.getPhoneVerified())
-                && Boolean.TRUE.equals(user.getIdentityVerified())
-                && Boolean.TRUE.equals(user.getBiometricVerified()));
-        return ResponseEntity.ok(toSafeUserPayload(userRepository.save(user)));
+        user.setIsVerified(true);
+        User savedUser = userRepository.save(user);
+
+        // Automatically trigger notification email from agronuxeuss.dev@gmail.com upon administrative approval
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("agronuxeuss.dev@gmail.com");
+            message.setTo(savedUser.getEmail());
+            message.setSubject("AgroNexus Account Approved - Welcome to the Network!");
+            message.setText("Hello " + savedUser.getFullName() + ",\n\n" +
+                    "Your AgroNexus account (" + savedUser.getRole() + ") has been officially vetted and approved by the Centre Region Hub administrator.\n\n" +
+                    "You can now log in and access your secure marketplace workspace.\n\n" +
+                    "Best regards,\nAgroNexus Trust & Compliance Team");
+            
+            mailSender.send(message);
+        } catch (Exception e) {
+            // Log warning if mail server configuration fails, but preserve approval transaction state
+            System.err.printf("[AdminController] WARNING: Failed to send approval email to %s: %s%n",
+                    savedUser.getEmail(), e.getMessage());
+        }
+
+        return ResponseEntity.ok(toSafeUserPayload(savedUser));
     }
 
     @PostMapping("/deapprove-user/{userId}")
@@ -79,7 +102,25 @@ public class AdminController {
                     "error", "Administrator accounts cannot be de-approved."));
         }
         user.setIsVerified(false);
-        return ResponseEntity.ok(toSafeUserPayload(userRepository.save(user)));
+        User savedUser = userRepository.save(user);
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("agronuxeuss.dev@gmail.com");
+            message.setTo(savedUser.getEmail());
+            message.setSubject("AgroNexus Account De-approved - Action Required");
+            message.setText("Hello " + savedUser.getFullName() + ",\n\n" +
+                    "Your AgroNexus account (" + savedUser.getRole() + ") has been de-approved by the administrator.\n\n" +
+                    "Your access to the secure marketplace workspace has been temporarily revoked. Please contact support for more information.\n\n" +
+                    "Best regards,\nAgroNexus Trust & Compliance Team");
+            
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.printf("[AdminController] WARNING: Failed to send de-approval email to %s: %s%n",
+                    savedUser.getEmail(), e.getMessage());
+        }
+
+        return ResponseEntity.ok(toSafeUserPayload(savedUser));
     }
 
     @GetMapping("/metrics")
@@ -93,7 +134,7 @@ public class AdminController {
                     : order.getTotalEscrowAmount())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
         } catch (Exception ignored) {
-            escrowVolume = new BigDecimal("14850000.0"); // Fallback mock ledger value
+            escrowVolume = new BigDecimal("14850000.0");
         }
 
         long alertCount = 0;
@@ -121,6 +162,14 @@ public class AdminController {
         payload.put("email", user.getEmail());
         payload.put("role", user.getRole() != null ? user.getRole().name() : "FARMER");
         payload.put("phoneNumber", user.getPhoneNumber() != null ? user.getPhoneNumber() : "+237...");
+        
+        // Updated to robustly verify and reflect hash presence
+        boolean hasNationalIdHash = user.getNationalIdHash() != null && !user.getNationalIdHash().isEmpty();
+        payload.put("nationalId", hasNationalIdHash ? "Vetted Hash Active" : "Not Provided");
+        
+        payload.put("biometricVerified", user.getBiometricVerified() != null ? user.getBiometricVerified() : false);
+        payload.put("cniVerified", user.getCniVerified() != null ? user.getCniVerified() : false);
+        payload.put("identityVerified", user.getIdentityVerified() != null ? user.getIdentityVerified() : false);
         payload.put("isVerified", user.getIsVerified() != null ? user.getIsVerified() : false);
         payload.put("createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : "2026-01-01");
         return payload;

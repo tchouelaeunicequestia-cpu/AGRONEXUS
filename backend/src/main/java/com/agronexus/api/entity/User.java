@@ -57,6 +57,9 @@ public class User {
     @Column(name = "biometric_verified", nullable = false)
     private Boolean biometricVerified;
 
+    @Column(name = "cni_verified")
+    private Boolean cniVerified;
+
     @Column(name = "is_verified")
     private Boolean isVerified;
 
@@ -80,6 +83,7 @@ public class User {
         if (phoneVerified == null) phoneVerified = false;
         if (identityVerified == null) identityVerified = false;
         if (biometricVerified == null) biometricVerified = false;
+        if (cniVerified == null) cniVerified = false;
     }
 
     @PreUpdate
