@@ -1,4 +1,3 @@
-// lib/screens/login_screen.dart
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -73,10 +72,13 @@ class _LoginScreenState extends State<LoginScreen>
             children: [
               const Icon(Icons.check_circle_rounded, color: Colors.white),
               const SizedBox(width: 12),
-              Text(
-                authData['message']?.toString() ??
-                    'Login successful. Welcome back to AgroNexus!',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+              Expanded(
+                child: Text(
+                  authData['message']?.toString() ??
+                      'Login successful. Welcome back to AgroNexus!',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -138,30 +140,22 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Fallback color
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // BOTTOM LAYER: Background Image
           Positioned.fill(
             child: Image.network(
               'https://img.freepik.com/premium-photo/agriculture-project-africa_943281-36244.jpg?w=2000',
               fit: BoxFit.cover,
-              // Show a dark placeholder while the image is fetching
-              // instead of a blank/white flash.
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
                 return Container(color: const Color(0xFF0f5132));
               },
-              // If the network image ever fails to load (no connection,
-              // link expires, hotlink blocked, etc.), fall back to a
-              // solid brand-color background instead of a broken-image
-              // icon or crash.
               errorBuilder: (context, error, stackTrace) {
                 return Container(color: const Color(0xFF0f5132));
               },
             ),
           ),
-          // TOP LAYER: Main UI
           SafeArea(
             child: FadeTransition(
               opacity: _fadeAnimation,
@@ -169,14 +163,13 @@ class _LoginScreenState extends State<LoginScreen>
                 position: _slideAnimation,
                 child: Column(
                   children: [
-                    // Top App Navigation / Header Bar (Frosted Glass)
                     ClipRRect(
                       child: BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
                         child: Container(
                           color: Colors.black.withOpacity(0.6),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 24.0,
+                            horizontal: 16.0,
                             vertical: 12.0,
                           ),
                           child: Row(
@@ -186,19 +179,18 @@ class _LoginScreenState extends State<LoginScreen>
                                 child: Row(
                                   children: [
                                     Container(
-                                      width: 40,
-                                      height: 40,
+                                      width: 36,
+                                      height: 36,
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF16a34a),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Icon(
-                                        Icons.eco_rounded,
                                         color: Colors.white,
-                                        size: 20,
+                                        borderRadius: BorderRadius.circular(10),
+                                        image: const DecorationImage(
+                                          image: AssetImage('assets/images/agronexus.jpg'),
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: 10),
                                     const Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,14 +199,15 @@ class _LoginScreenState extends State<LoginScreen>
                                             'AgroNexus',
                                             style: TextStyle(
                                               fontWeight: FontWeight.w900,
-                                              fontSize: 18,
+                                              fontSize: 16,
                                               color: Colors.white,
                                             ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                           Text(
                                             'Identity & RBAC Access Gateway',
                                             style: TextStyle(
-                                              fontSize: 11,
+                                              fontSize: 10,
                                               color: Colors.white70,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -227,27 +220,26 @@ class _LoginScreenState extends State<LoginScreen>
                                   ],
                                 ),
                               ),
-                              Flexible(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                                ),
+                                child: const Text(
+                                  'CEMAC Ready',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: Colors.white.withOpacity(0.2)),
-                                  ),
-                                  child: const Text(
-                                    'BEAC / CEMAC Ready',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -255,8 +247,6 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                     ),
-                    
-                    // Main Responsive Container (Frosted Glass)
                     Expanded(
                       child: Center(
                         child: SingleChildScrollView(
@@ -336,7 +326,7 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         ),
       ),
-      padding: const EdgeInsets.all(32.0),
+      padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -379,38 +369,38 @@ class _LoginScreenState extends State<LoginScreen>
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               const Text(
                 'Connecting Farms, Escrow & IoT in One Unified Hub',
                 style: TextStyle(
-                  fontSize: 26,
+                  fontSize: 22,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   height: 1.2,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               const Text(
                 'Role-based authentication providing smallholders, off-takers, transporters, and agronomists with verified trust pipelines.',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   color: Color(0xFFe2e8f0),
-                  height: 1.5,
+                  height: 1.4,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               _buildFeatureHighlightCard(
                 icon: Icons.shield_outlined,
                 title: 'Multi-Sig Escrow Vault',
                 description: 'Transparent 5% platform service fee, escrow protection, and dual verification.',
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               _buildFeatureHighlightCard(
                 icon: Icons.memory,
                 title: 'ESP32 Silo Telemetry',
                 description: 'Live DHT22 microclimate & MQ-135 decay gas sensors logged in real time.',
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               _buildFeatureHighlightCard(
                 icon: Icons.radar,
                 title: 'PostGIS Radial Exchange',
@@ -418,9 +408,9 @@ class _LoginScreenState extends State<LoginScreen>
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.only(top: 16),
+            padding: const EdgeInsets.only(top: 14),
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(color: Colors.white.withOpacity(0.15)),
@@ -432,12 +422,12 @@ class _LoginScreenState extends State<LoginScreen>
               children: [
                 Text(
                   'Backend: Spring Boot 3.3 · Java 21',
-                  style: TextStyle(fontSize: 11, color: Color(0xFFcbd5e1)),
+                  style: TextStyle(fontSize: 10, color: Color(0xFFcbd5e1)),
                 ),
                 Text(
                   'v4.2.0 Release',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10,
                     fontFamily: 'monospace',
                     color: Color(0xFF4ade80),
                     fontWeight: FontWeight.bold,
@@ -457,24 +447,24 @@ class _LoginScreenState extends State<LoginScreen>
     required String description,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.35),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white.withOpacity(0.15)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: const Color(0xFF22c55e).withOpacity(0.2),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: const Color(0xFF4ade80), size: 18),
+            child: Icon(icon, color: const Color(0xFF4ade80), size: 16),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,7 +482,7 @@ class _LoginScreenState extends State<LoginScreen>
                 Text(
                   description,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 10.5,
                     color: Color(0xFFcbd5e1),
                     height: 1.3,
                   ),
@@ -507,8 +497,8 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildRightLoginForm({required bool isDesktop}) {
     return Container(
-      color: Colors.transparent, // Let frosted glass show through
-      padding: EdgeInsets.all(isDesktop ? 36.0 : 20.0),
+      color: Colors.transparent,
+      padding: EdgeInsets.all(isDesktop ? 32.0 : 20.0),
       child: Form(
         key: _formKey,
         child: Column(
@@ -525,7 +515,7 @@ class _LoginScreenState extends State<LoginScreen>
                       Text(
                         'Sign In',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 22,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
                         ),
@@ -543,101 +533,101 @@ class _LoginScreenState extends State<LoginScreen>
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
-                    ),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'SYSTEM NODE',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white70,
-                          ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'SYSTEM NODE',
+                        style: TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white70,
                         ),
-                        Text(
-                          'Centre Region Hub',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF6cf8bb),
-                          ),
+                      ),
+                      Text(
+                        'Centre Region',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF6cf8bb),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white, fontSize: 13),
               decoration: InputDecoration(
                 labelText: 'Registered Email Address',
                 hintText: 'e.g. farmer@agronexus.io',
                 filled: true,
                 fillColor: Colors.white.withOpacity(0.1),
-                labelStyle: const TextStyle(color: Colors.white70),
-                hintStyle: const TextStyle(color: Colors.white38),
+                labelStyle: const TextStyle(color: Colors.white70, fontSize: 12),
+                hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Color(0xFF4ade80), width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF4ade80), width: 1.5),
                 ),
                 prefixIcon: const Icon(
                   Icons.email_outlined,
                   color: Colors.white70,
+                  size: 18,
                 ),
               ),
               validator: (v) => v!.isEmpty ? 'Email is required' : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white, fontSize: 13),
               decoration: InputDecoration(
                 labelText: 'Password',
                 hintText: '••••••••',
                 filled: true,
                 fillColor: Colors.white.withOpacity(0.1),
-                labelStyle: const TextStyle(color: Colors.white70),
-                hintStyle: const TextStyle(color: Colors.white38),
+                labelStyle: const TextStyle(color: Colors.white70, fontSize: 12),
+                hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Color(0xFF4ade80), width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF4ade80), width: 1.5),
                 ),
                 prefixIcon: const Icon(
                   Icons.lock_outline_rounded,
                   color: Colors.white70,
+                  size: 18,
                 ),
                 suffixIcon: IconButton(
                   icon: Icon(
@@ -645,6 +635,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
                     color: Colors.white70,
+                    size: 18,
                   ),
                   onPressed: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
@@ -652,7 +643,7 @@ class _LoginScreenState extends State<LoginScreen>
               ),
               validator: (v) => v!.isEmpty ? 'Password is required' : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Wrap(
               alignment: WrapAlignment.spaceBetween,
               crossAxisAlignment: WrapCrossAlignment.center,
@@ -662,10 +653,9 @@ class _LoginScreenState extends State<LoginScreen>
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Theme(
-                      data: ThemeData(
-                        unselectedWidgetColor: Colors.white70,
-                      ),
+                    SizedBox(
+                      height: 24,
+                      width: 24,
                       child: Checkbox(
                         value: _keepSessionActive,
                         onChanged: (val) =>
@@ -674,10 +664,11 @@ class _LoginScreenState extends State<LoginScreen>
                         checkColor: Colors.white,
                       ),
                     ),
+                    const SizedBox(width: 6),
                     const Text(
-                      'Keep session active (24h JWT)',
+                      'Keep session active',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11.5,
                         color: Colors.white70,
                         fontWeight: FontWeight.w500,
                       ),
@@ -687,12 +678,12 @@ class _LoginScreenState extends State<LoginScreen>
                 const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.fingerprint, size: 16, color: Color(0xFF6cf8bb)),
+                    Icon(Icons.fingerprint, size: 15, color: Color(0xFF6cf8bb)),
                     SizedBox(width: 4),
                     Text(
                       'Use Face-ID',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11.5,
                         color: Color(0xFF6cf8bb),
                         fontWeight: FontWeight.bold,
                       ),
@@ -701,7 +692,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -710,15 +701,15 @@ class _LoginScreenState extends State<LoginScreen>
                   backgroundColor: const Color(0xFF0f5132),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 4,
                 ),
                 onPressed: _isLoading ? null : _submitLogin,
                 child: _isLoading
                     ? const SizedBox(
-                        width: 22,
-                        height: 22,
+                        width: 20,
+                        height: 20,
                         child: CircularProgressIndicator(
                           color: Colors.white,
                           strokeWidth: 2.5,
@@ -730,7 +721,7 @@ class _LoginScreenState extends State<LoginScreen>
                           Text(
                             'Sign In to Account',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 13.5,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -740,7 +731,7 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             Center(
               child: Wrap(
                 alignment: WrapAlignment.center,

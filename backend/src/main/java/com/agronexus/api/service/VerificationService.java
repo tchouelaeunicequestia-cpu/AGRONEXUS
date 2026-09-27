@@ -5,6 +5,8 @@ import com.agronexus.api.entity.VerificationChallenge;
 import com.agronexus.api.repository.UserRepository;
 import com.agronexus.api.repository.VerificationChallengeRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,13 +20,20 @@ public class VerificationService {
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
     private final VerificationChallengeRepository challenges;
     private final UserRepository users;
+    private final JavaMailSender mailSender;
 
     @Value("${agronexus.verification.delivery-mode:disabled}")
     private String deliveryMode;
 
-    public VerificationService(VerificationChallengeRepository challenges, UserRepository users) {
+    @Value("${agronexus.notifications.from-address:agronuxeuss.dev@gmail.com}")
+    private String fromAddress;
+
+    public VerificationService(VerificationChallengeRepository challenges,
+                               UserRepository users,
+                               JavaMailSender mailSender) {
         this.challenges = challenges;
         this.users = users;
+        this.mailSender = mailSender;
     }
 
     public void issue(User user, VerificationChallenge.Channel channel) {
@@ -40,12 +49,37 @@ public class VerificationService {
                 .attempts(0)
                 .consumed(false)
                 .build());
+
         if ("console".equalsIgnoreCase(deliveryMode)) {
             System.out.printf("AgroNexus %s verification code for user %d: %s%n",
                     channel.name(), user.getId(), code);
+        } else if ("email".equalsIgnoreCase(deliveryMode)) {
+            if (channel == VerificationChallenge.Channel.EMAIL) {
+                sendOtpEmail(user, code);
+            } else {
+                // For PHONE channel in email mode, fall back to console log
+                System.out.printf("AgroNexus %s verification code for user %d: %s%n",
+                        channel.name(), user.getId(), code);
+            }
         } else {
             throw new IllegalStateException("Verification provider integration is not configured.");
         }
+    }
+
+    private void sendOtpEmail(User user, String code) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(user.getEmail());
+        message.setSubject("AgroNexus – Your Verification Code");
+        message.setText(
+                "Hello " + (user.getFullName() != null ? user.getFullName() : user.getEmail()) + ",\n\n" +
+                "Your AgroNexus email verification code is:\n\n" +
+                "    " + code + "\n\n" +
+                "This code is valid for 10 minutes. Do not share it with anyone.\n\n" +
+                "If you did not request this, please ignore this email.\n\n" +
+                "Best regards,\nAgroNexus Security Team"
+        );
+        mailSender.send(message);
     }
 
     public void verify(User user, VerificationChallenge.Channel channel, String code) {

@@ -88,6 +88,7 @@ public class AuthController {
                 .phoneVerified(false)
                 .identityVerified(false)
                 .biometricVerified(Boolean.TRUE.equals(payload.get("biometricVerified")))
+                .cniVerified(Boolean.TRUE.equals(payload.get("cniVerified")))
                 .isVerified(false)
                 .location(geometryFactory.createPoint(new Coordinate(lon, lat)))
                 .build();

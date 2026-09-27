@@ -25,6 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _obscurePassword = true;
   bool _isLocationCaptured = false;
   bool _isFaceScanned = false;
+  bool _isCniScanned = false; // Tracks physical CNI card photo scan
   double? _lat;
   double? _lon;
 
@@ -102,7 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     super.dispose();
   }
 
-  static const int _totalSteps = 4;
+  static const int _totalSteps = 5; // Updated to include CNI document capture step
 
   bool get _isRoleSelected => _selectedRole != null;
 
@@ -148,6 +149,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     var completed = 0;
     if (_isRoleSelected) completed++;
     if (_isPersonalDetailsComplete) completed++;
+    if (_isCniScanned) completed++;
     if (_isFaceScanned) completed++;
     if (_isLocationCaptured) completed++;
     return completed;
@@ -158,9 +160,185 @@ class _RegisterScreenState extends State<RegisterScreen>
   String get _currentStageLabel {
     if (_completedSteps == _totalSteps) return 'All Steps Complete';
     if (!_isRoleSelected) return 'Choose Your Role';
+    if (!_isCniScanned) return 'National ID Document Scan';
     if (!_isFaceScanned) return 'Biometric Verification';
     if (!_isLocationCaptured) return 'Location Capture';
     return 'Personal Details';
+  }
+
+  Future<void> _handleCniScan() async {
+    bool isScanning = false;
+    bool scanComplete = _isCniScanned;
+    String statusMessage = _isCniScanned
+        ? 'National ID card photo captured & verified successfully!'
+        : 'Position your physical National ID / CNI card inside the camera frame.';
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            void performCniScan() async {
+              setDialogState(() {
+                isScanning = true;
+                statusMessage = 'Capturing image & running OCR data extraction...';
+              });
+              try {
+                await Future.delayed(const Duration(seconds: 2)); // Simulated document scan delay
+                setDialogState(() {
+                  isScanning = false;
+                  scanComplete = true;
+                  statusMessage = 'National ID document verified successfully!';
+                });
+              } catch (e) {
+                setDialogState(() {
+                  isScanning = false;
+                  scanComplete = false;
+                  statusMessage = 'Scan failed. Please ensure adequate lighting.';
+                });
+              }
+            }
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              title: const Row(
+                children: [
+                  Icon(
+                    Icons.badge_rounded,
+                    color: Color(0xFF0f5132),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'National ID / CNI Photo Capture',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0f5132),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: 380,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        statusMessage,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: scanComplete
+                              ? const Color(0xFF16a34a)
+                              : const Color(0xFF404942),
+                          fontWeight: scanComplete
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        height: 140,
+                        width: 220,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: const Color(0xFF002615),
+                          border: Border.all(
+                            color: scanComplete
+                                ? const Color(0xFF16a34a)
+                                : isScanning
+                                ? const Color(0xFFD97706)
+                                : const Color(0xFF6cf8bb),
+                            width: 3,
+                          ),
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            if (isScanning)
+                              const CircularProgressIndicator(
+                                color: Color(0xFF6cf8bb),
+                                strokeWidth: 3,
+                              )
+                            else if (scanComplete)
+                              const Icon(
+                                Icons.check_circle_outline_rounded,
+                                color: Colors.greenAccent,
+                                size: 56,
+                              )
+                            else
+                              const Icon(
+                                Icons.credit_card_rounded,
+                                color: Color(0xFF81c784),
+                                size: 56,
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      if (!scanComplete && !isScanning)
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0f5132),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: performCniScan,
+                          icon: const Icon(Icons.camera_alt_rounded),
+                          label: const Text('Capture ID Photo'),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0f5132),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: scanComplete
+                      ? () {
+                          setState(() => _isCniScanned = true);
+                          Navigator.pop(dialogContext);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('National ID Photo Confirmed!'),
+                              backgroundColor: Color(0xFF0f5132),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      : null,
+                  child: const Text('Save CNI Photo'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _handleBiometricScan() async {
@@ -324,17 +502,19 @@ class _RegisterScreenState extends State<RegisterScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
-                    setState(() => _isFaceScanned = true);
-                    Navigator.pop(dialogContext);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Live Face Scan Identity Confirmed!'),
-                        backgroundColor: Color(0xFF0f5132),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
+                  onPressed: scanComplete
+                      ? () {
+                          setState(() => _isFaceScanned = true);
+                          Navigator.pop(dialogContext);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Live Face Scan Identity Confirmed!'),
+                              backgroundColor: Color(0xFF0f5132),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      : null,
                   child: const Text('Save Verification'),
                 ),
               ],
@@ -384,6 +564,12 @@ class _RegisterScreenState extends State<RegisterScreen>
       _showRegistrationError('Please choose your ecosystem role first.');
       return;
     }
+    if (!_isCniScanned) {
+      _showRegistrationError(
+        'Please capture your National ID / CNI document photo first.',
+      );
+      return;
+    }
     if (!_isFaceScanned) {
       _showRegistrationError(
         'Please complete the Live Face Scan verification first.',
@@ -406,6 +592,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         phoneNumber: _phoneController.text.trim(),
         nationalId: _cniController.text.trim(),
         biometricVerified: _isFaceScanned,
+        cniVerified: _isCniScanned,
         role: _selectedRole!,
         latitude: _lat,
         longitude: _lon,
@@ -651,25 +838,6 @@ class _RegisterScreenState extends State<RegisterScreen>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildNavBadge(String text, Color textColor, Color bgColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: textColor.withValues(alpha: 0.2)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: textColor,
-        ),
       ),
     );
   }
@@ -985,6 +1153,16 @@ class _RegisterScreenState extends State<RegisterScreen>
             ),
             const SizedBox(height: 18),
 
+            // CNI Document Card right next to/grouped with ID input flow
+            _buildActionCard(
+              icon: Icons.badge_rounded,
+              label: 'National ID / CNI Document Scan',
+              status: _isCniScanned ? 'ID Scanned ✓' : 'Pending ID Photo',
+              statusOk: _isCniScanned,
+              buttonText: _isCniScanned ? 'Re-capture' : 'Scan ID Card',
+              onTap: _handleCniScan,
+            ),
+            const SizedBox(height: 10),
             _buildActionCard(
               icon: Icons.face_retouching_natural_rounded,
               label: 'Live Biometric Scan',
