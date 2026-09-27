@@ -16,12 +16,16 @@ backend/target/
 backend/.mvn/
 backend/out/
 backend/.gradle/
+backend/src/main/resources/application.yml
 
 # --- IDE and OS files ---
 .idea/
 .vscode/
 *.iml
 .DS_Store
+.vscode/
+target/
+.env
 Thumbs.db
 
 # Large JAR dependencies & Gradle logs

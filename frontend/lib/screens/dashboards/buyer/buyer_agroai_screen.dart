@@ -16,24 +16,6 @@ class _BuyerAgroAIScreenState extends State<BuyerAgroAIScreen> {
   bool _attachTelemetry = false;
   bool _hasImageAttached = false;
 
-  final List<String> _quickPrompts = [
-    'Optimal storage temperature for maize',
-    'Post-harvest humidity guidelines',
-    'FAO standards for cocoa bean preservation',
-    'Preventing mold in grain storage',
-    'How do I build a spaceship?' // To test rejection
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _messages.add({
-      'sender': 'ai',
-      'text': 'Hello! I\'m your AgroAI RAG Assistant. Ask me anything about crop conservation, FAO standards, or post-harvest preservation.',
-      'status': 'SUCCESS'
-    });
-  }
-
   Future<void> _sendQuery(String prompt) async {
     if (prompt.trim().isEmpty) return;
 
@@ -54,7 +36,6 @@ class _BuyerAgroAIScreenState extends State<BuyerAgroAIScreen> {
       setState(() {
         _messages.add({
           'sender': 'ai',
-          // The backend returns 'answer' for both success and rejection in the updated controller
           'text': response['answer'] ?? response['response'] ?? response['message'] ?? 'Advisory retrieved successfully.',
           'status': response['status'] ?? 'APPROVED'
         });
@@ -75,7 +56,7 @@ class _BuyerAgroAIScreenState extends State<BuyerAgroAIScreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(top: 80, left: 16, right: 16, bottom: 90), // Added bottom padding to clear the bottom nav
+      padding: const EdgeInsets.only(top: 80, left: 16, right: 16, bottom: 90),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -121,29 +102,6 @@ class _BuyerAgroAIScreenState extends State<BuyerAgroAIScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          const Text('Quick Select Prompts:', style: TextStyle(color: Colors.white54, fontSize: 12)),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 36,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _quickPrompts.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: ActionChip(
-                    backgroundColor: Colors.white.withOpacity(0.08),
-                    side: BorderSide.none,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    labelStyle: const TextStyle(color: Color(0xFF6CF8BB), fontSize: 12),
-                    label: Text(_quickPrompts[index]),
-                    onPressed: () => _sendQuery(_quickPrompts[index]),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 12),
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
@@ -209,7 +167,6 @@ class _BuyerAgroAIScreenState extends State<BuyerAgroAIScreen> {
                           ),
                         ),
                       const Divider(color: Colors.white12, height: 1),
-                      const Divider(color: Colors.white12, height: 1),
                       Container(
                         padding: const EdgeInsets.all(12),
                         child: Column(
@@ -267,10 +224,10 @@ class _BuyerAgroAIScreenState extends State<BuyerAgroAIScreen> {
                                     ),
                                     child: TextField(
                                       controller: _queryController,
-                                      style: const TextStyle(color: Colors.white),
+                                      style: const TextStyle(color: Colors.white, fontSize: 14),
                                       decoration: const InputDecoration(
                                         hintText: 'Message AgroAI...',
-                                        hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
+                                        hintStyle: TextStyle(color: Colors.white54, fontSize: 13),
                                         border: InputBorder.none,
                                       ),
                                       onSubmitted: (val) => _sendQuery(val),
