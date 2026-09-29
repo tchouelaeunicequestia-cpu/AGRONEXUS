@@ -552,7 +552,7 @@ class _TransporterDashboardState extends State<TransporterDashboard> {
               ),
               const SizedBox(height: 4),
               const Text(
-                'Monitor order delivery states across CEMAC transit zones.',
+                'Monitor order delivery states across all transit zones.',
                 style: TextStyle(fontSize: 12, color: Colors.white70),
               ),
               const SizedBox(height: 16),

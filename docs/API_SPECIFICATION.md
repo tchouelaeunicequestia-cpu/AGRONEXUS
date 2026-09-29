@@ -143,7 +143,27 @@ Dashboard quote queues:
 
 ---
 
-### 🌡️ 2.4 IoT Telemetry Ingestion (`TelemetryController.java`)
+### 🚚 2.4 Transport & Handover Delivery (`OrderController.java`)
+
+#### `POST /api/v1/orders/{id}/farmer-signoff`
+- **Access**: `FARMER`, `ADMIN`
+- **Description**: Signs off farmer dispatch, updating order delivery status and triggering intermediate transport assignment.
+
+#### `POST /api/v1/orders/{id}/transporter-confirm`
+- **Access**: `TRANSPORTER`, `ADMIN`
+- **Description**: Confirms transporter freight pickup and begins route tracking.
+
+#### `POST /api/v1/orders/{id}/transporter-deliver`
+- **Access**: `TRANSPORTER`, `ADMIN`
+- **Description**: Confirms physical delivery at buyer destination and flags order ready for escrow release.
+
+#### `POST /api/v1/orders/{id}/waypoint`
+- **Access**: `TRANSPORTER`, `ADMIN`
+- **Description**: Appends live intermediate GPS waypoint coordinates for real-time delivery tracking.
+
+---
+
+### 🌡️ 2.5 IoT Telemetry Ingestion (`TelemetryController.java`)
 
 #### `POST /api/v1/telemetry/log`
 - **Access**: Public / Device Node
@@ -153,10 +173,42 @@ Dashboard quote queues:
 - **Access**: Authenticated users
 - **Description**: Retrieves latest 50 telemetry readings for a specific storage node.
 
+#### `GET /api/v1/telemetry/alerts/stream`
+- **Access**: Authenticated users
+- **Description**: Server-Sent Events (SSE) stream delivering real-time storage environmental threshold breaches and decay risk warnings.
+
 ---
 
-### 🤖 2.5 Domain-Guarded AI Assistant (`AiAssistantController.java`)
+### 🤖 2.6 Domain-Guarded AI Assistant (`AgroAIController.java`)
 
-#### `POST /api/v1/ai/query`
+#### `POST /api/v1/ai/query` or `POST /api/v1/ai/agro-assistant`
 - **Access**: Authenticated users
-- **Description**: Passes user query through agricultural keyword guardrails and returns grounded advice or rejection message.
+- **Description**: Passes user query through agricultural domain guardrails (`AgroAIService.java`), performs `pgvector` semantic retrieval against FAO/USDA reference texts, and returns grounded advisory responses with official citations or out-of-scope rejection messages.
+- **Request Body**:
+```json
+{
+  "query": "What is the optimal relative humidity for storing plantains?",
+  "userId": 1,
+  "context": "storage_conservation"
+}
+```
+
+---
+
+### 👤 2.7 Admin & Self-Service User Management (`AdminController.java`, `AuthController.java`)
+
+#### `GET /api/v1/admin/users`
+- **Access**: `ADMIN`
+- **Description**: Lists all registered platform users with verification status, face scan audit metadata, and account roles.
+
+#### `PUT /api/v1/admin/approve-user/{userId}`
+- **Access**: `ADMIN`
+- **Description**: Approves pending user accounts, unlocking full trading and dispatch capabilities.
+
+#### `PUT /api/v1/admin/deapprove-user/{userId}`
+- **Access**: `ADMIN`
+- **Description**: Suspends/de-approves non-admin user accounts.
+
+#### `PUT /api/v1/users/profile`
+- **Access**: Authenticated users
+- **Description**: Self-service endpoint updating contact details, profile photo, and secondary settings while preserving primary user identity and audit history.

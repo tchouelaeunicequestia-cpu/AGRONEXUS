@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 import 'api_constants.dart' as api_constants;
 import 'secure_storage_service.dart';
@@ -37,6 +38,27 @@ class ApiService {
     }
   }
 
+  /// Authenticate with Google OAuth idToken
+  static Future<Map<String, dynamic>> googleLogin({
+    required String idToken,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/auth/google'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'idToken': idToken}),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      globalAccessToken = data['accessToken'];
+      globalRefreshToken = data['refreshToken'];
+      globalUserId = data['userId'];
+      return data;
+    } else {
+      final errorBody = jsonDecode(response.body);
+      throw Exception(errorBody['error'] ?? 'Google authentication failed.');
+    }
+  }
+
   /// Returns the current account from the server, including its authoritative role.
   static Future<Map<String, dynamic>> getCurrentUser() async {
     final response = await authenticatedRequest('/api/v1/auth/me');
@@ -51,7 +73,7 @@ class ApiService {
     );
   }
 
-  /// Register a new user role with biometric profile data
+  /// Register a new user role with biometric profile data and optional images
   static Future<Map<String, dynamic>> register({
     required String name,
     required String email,
@@ -63,28 +85,71 @@ class ApiService {
     required String role,
     double? latitude,
     double? longitude,
+    XFile? cniImage,
+    XFile? faceImage,
   }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/v1/auth/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final uri = Uri.parse('$baseUrl/api/v1/auth/register');
+
+    // Use multipart when images are present, plain JSON otherwise
+    if (cniImage != null || faceImage != null) {
+      final request = http.MultipartRequest('POST', uri);
+      if (globalAccessToken != null) {
+        request.headers['Authorization'] = 'Bearer $globalAccessToken';
+      }
+      request.fields.addAll({
         'fullName': name,
         'email': email,
         'password': password,
         'phoneNumber': phoneNumber,
         'nationalId': nationalId,
-        'biometricVerified': biometricVerified,
-        'cniVerified': cniVerified,
+        'biometricVerified': biometricVerified.toString(),
+        'cniVerified': cniVerified.toString(),
         'role': role,
-        'latitude': latitude ?? 3.8480,
-        'longitude': longitude ?? 11.5021,
-      }),
-    );
-    if (response.statusCode == 201) {
-      return jsonDecode(response.body);
+        'latitude': (latitude ?? 3.8480).toString(),
+        'longitude': (longitude ?? 11.5021).toString(),
+      });
+      if (cniImage != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath('cniImage', cniImage.path),
+        );
+      }
+      if (faceImage != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath('faceImage', faceImage.path),
+        );
+      }
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+      if (response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        final errorBody = jsonDecode(response.body);
+        throw Exception(errorBody['error'] ?? 'Registration failed.');
+      }
     } else {
-      final errorBody = jsonDecode(response.body);
-      throw Exception(errorBody['error'] ?? 'Registration failed.');
+      // Fallback: plain JSON (no images)
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'fullName': name,
+          'email': email,
+          'password': password,
+          'phoneNumber': phoneNumber,
+          'nationalId': nationalId,
+          'biometricVerified': biometricVerified,
+          'cniVerified': cniVerified,
+          'role': role,
+          'latitude': latitude ?? 3.8480,
+          'longitude': longitude ?? 11.5021,
+        }),
+      );
+      if (response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        final errorBody = jsonDecode(response.body);
+        throw Exception(errorBody['error'] ?? 'Registration failed.');
+      }
     }
   }
 
@@ -439,7 +504,7 @@ class ApiService {
       method: 'POST',
       body: {'query': prompt},
     );
-    // If the backend returns 200 OK or 400 Bad Request (guardrail rejection), 
+    // If the backend returns 200 OK or 400 Bad Request (guardrail rejection),
     // both contain valid JSON bodies we want to decode!
     if (response.statusCode == 200 || response.statusCode == 400) {
       return jsonDecode(response.body);

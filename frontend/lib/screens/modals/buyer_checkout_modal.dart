@@ -180,7 +180,7 @@ class _BuyerCheckoutModalState extends State<BuyerCheckoutModal> {
               const SizedBox(height: 12),
               const Center(
                 child: Text(
-                  'Funds are locked in a CEMAC trust vault until QC signoff.',
+                  'Funds are held in escrow until quality check signoff.',
                   style: TextStyle(fontSize: 11, color: Colors.white54),
                   textAlign: TextAlign.center,
                 ),

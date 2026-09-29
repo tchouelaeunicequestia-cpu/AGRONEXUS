@@ -1245,24 +1245,30 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Row(
-                              children: [
-                                Icon(
-                                  Icons.trending_up_rounded,
-                                  color: Color(0xFF006C49),
-                                  size: 18,
-                                ),
-                                SizedBox(width: 6),
-                                Text(
-                                  'Regional Wholesale Benchmark',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF0B1F14),
+                            const Expanded(
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.trending_up_rounded,
+                                    color: Color(0xFF006C49),
+                                    size: 18,
                                   ),
-                                ),
-                              ],
+                                  SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'Regional Wholesale Benchmark',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0B1F14),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             Text(
                               _dynamicBenchmark,
                               style: const TextStyle(
@@ -1298,32 +1304,37 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  _hasIoTNode ? Icons.sensors_rounded : Icons.sensors_off_rounded,
-                                  color: _hasIoTNode ? const Color(0xFF006C49) : const Color(0xFF64748B),
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Connect IoT Storage Node',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF0B1F14),
-                                      ),
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _hasIoTNode ? Icons.sensors_rounded : Icons.sensors_off_rounded,
+                                    color: _hasIoTNode ? const Color(0xFF006C49) : const Color(0xFF64748B),
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Connect IoT Storage Node',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF0B1F14),
+                                          ),
+                                        ),
+                                        Text(
+                                          _hasIoTNode ? 'Active telemetry feed linked' : 'Optional — produce listed under ambient storage',
+                                          style: const TextStyle(fontSize: 10, color: Color(0xFF404942)),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
                                     ),
-                                    Text(
-                                      _hasIoTNode ? 'Active telemetry feed linked' : 'Optional — produce listed under ambient storage',
-                                      style: const TextStyle(fontSize: 10, color: Color(0xFF404942)),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                  ),
+                                ],
+                              ),
                             ),
                             Switch(
                               value: _hasIoTNode,

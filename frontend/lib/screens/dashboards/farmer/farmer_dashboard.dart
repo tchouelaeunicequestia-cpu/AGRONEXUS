@@ -455,7 +455,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                 style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white),
               ),
               const SizedBox(height: 6),
-              const Text('85% locked in CEMAC trust vault', style: TextStyle(fontSize: 12, color: Color(0xFF6CF8BB), fontWeight: FontWeight.w600)),
+              const Text('85% held in escrow', style: TextStyle(fontSize: 12, color: Color(0xFF6CF8BB), fontWeight: FontWeight.w600)),
               const SizedBox(height: 16),
               const Text('Release trigger: Buyer Q/C Signoff', style: TextStyle(fontSize: 11, color: Colors.white54)),
             ],

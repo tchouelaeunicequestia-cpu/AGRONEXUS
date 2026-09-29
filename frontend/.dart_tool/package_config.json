@@ -152,12 +152,6 @@
       "languageVersion": "2.18"
     },
     {
-      "name": "flutter_lints",
-      "rootUri": "file:///C:/Users/lenovo%20p14s/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_lints-6.0.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.8"
-    },
-    {
       "name": "flutter_map",
       "rootUri": "file:///C:/Users/lenovo%20p14s/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_map-8.3.2",
       "packageUri": "lib/",
@@ -264,6 +258,42 @@
       "rootUri": "file:///C:/Users/lenovo%20p14s/AppData/Local/Pub/Cache/hosted/pub.dev/geolocator_windows-0.2.5",
       "packageUri": "lib/",
       "languageVersion": "3.5"
+    },
+    {
+      "name": "google_identity_services_web",
+      "rootUri": "file:///C:/Users/lenovo%20p14s/AppData/Local/Pub/Cache/hosted/pub.dev/google_identity_services_web-0.3.3+1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "google_sign_in",
+      "rootUri": "file:///C:/Users/lenovo%20p14s/AppData/Local/Pub/Cache/hosted/pub.dev/google_sign_in-6.2.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "google_sign_in_android",
+      "rootUri": "file:///C:/Users/lenovo%20p14s/AppData/Local/Pub/Cache/hosted/pub.dev/google_sign_in_android-6.2.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "google_sign_in_ios",
+      "rootUri": "file:///C:/Users/lenovo%20p14s/AppData/Local/Pub/Cache/hosted/pub.dev/google_sign_in_ios-5.9.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "google_sign_in_platform_interface",
+      "rootUri": "file:///C:/Users/lenovo%20p14s/AppData/Local/Pub/Cache/hosted/pub.dev/google_sign_in_platform_interface-2.5.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "google_sign_in_web",
+      "rootUri": "file:///C:/Users/lenovo%20p14s/AppData/Local/Pub/Cache/hosted/pub.dev/google_sign_in_web-0.12.4+4",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
     },
     {
       "name": "gsettings",
@@ -402,12 +432,6 @@
       "rootUri": "file:///C:/Users/lenovo%20p14s/AppData/Local/Pub/Cache/hosted/pub.dev/leak_tracker_testing-3.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.2"
-    },
-    {
-      "name": "lints",
-      "rootUri": "file:///C:/Users/lenovo%20p14s/AppData/Local/Pub/Cache/hosted/pub.dev/lints-6.1.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.8"
     },
     {
       "name": "local_auth",
