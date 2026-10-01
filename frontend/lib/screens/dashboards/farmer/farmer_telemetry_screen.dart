@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/services/api_service.dart';
+import 'package:frontend/widgets/farmer_background_layer.dart';
+import 'package:frontend/widgets/farmer_bottom_navigation.dart';
+
+import 'farmer_dashboard.dart';
+import 'farmer_listings_screen.dart';
+import 'farmer_escrow_screen.dart';
+import 'farmer_profile_screen.dart';
+import '../../../screens/produce/add_produce_screen.dart';
 
 class FarmerTelemetryScreen extends StatefulWidget {
   const FarmerTelemetryScreen({super.key});
@@ -65,72 +73,111 @@ class _FarmerTelemetryScreenState extends State<FarmerTelemetryScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => CustomScrollView(
-    slivers: [
-      SliverAppBar(
-        pinned: true,
-        backgroundColor: Colors.black.withValues(alpha: 0.72),
-        foregroundColor: Colors.white,
-        title: const Text('Silo telemetry'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh metrics',
-            onPressed: _isLoading ? null : _loadMetrics,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
-      ),
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-        sliver: SliverList(
-          delegate: SliverChildListDelegate([
-            _siloHeader(),
-            const SizedBox(height: 18),
-            if (_isLoading)
-              const Center(
-                child: CircularProgressIndicator(color: Color(0xFF6CF8BB)),
-              )
-            else if (_errorMessage != null)
-              _messageCard(_errorMessage!)
-            else
-              _metricsGrid(),
-            const SizedBox(height: 20),
-            _nodeSearch(),
-            if (_readings.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Text(
-                'Recent node readings',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.transparent,
+    bottomNavigationBar: FarmerBottomNavigation(
+      selectedIndex: 4,
+      onDestinationSelected: _navigateToFarmerTab,
+    ),
+    body: Stack(
+      children: [
+        const FarmerBackgroundLayer(),
+        CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              backgroundColor: const Color(0xD90B1326),
+              foregroundColor: Colors.white,
+              title: const Text('Silo telemetry'),
+              actions: [
+                IconButton(
+                  tooltip: 'Refresh metrics',
+                  onPressed: _isLoading ? null : _loadMetrics,
+                  icon: const Icon(Icons.refresh_rounded),
                 ),
+                IconButton(
+                  tooltip: 'Open profile',
+                  onPressed: () => _navigateToFarmerTab(5),
+                  icon: const Icon(Icons.person_outline_rounded),
+                ),
+              ],
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _siloHeader(),
+                  const SizedBox(height: 18),
+                  if (_isLoading)
+                    const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF6CF8BB),
+                      ),
+                    )
+                  else if (_errorMessage != null)
+                    _messageCard(_errorMessage!)
+                  else
+                    _metricsGrid(),
+                  const SizedBox(height: 20),
+                  _nodeSearch(),
+                  if (_readings.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Recent node readings',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ..._readings.take(10).map(_readingCard),
+                  ],
+                ]),
               ),
-              const SizedBox(height: 8),
-              ..._readings.take(10).map(_readingCard),
-            ],
-          ]),
+            ),
+          ],
         ),
-      ),
-    ],
+      ],
+    ),
   );
+
+  void _navigateToFarmerTab(int index) {
+    if (index == 4) return;
+    final Widget screen = switch (index) {
+      0 => const FarmerDashboard(),
+      1 => const FarmerListingsScreen(),
+      2 => const AddProduceScreen(),
+      3 => const FarmerEscrowScreen(),
+      5 => const FarmerProfileScreen(),
+      _ => const FarmerDashboard(),
+    };
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+  }
 
   Widget _metricsGrid() => LayoutBuilder(
     builder: (context, constraints) {
       final cards = [
         _metricCard(
           'Escrow balance',
-          '${_metrics['escrowBalance'] ?? 0} XAF',
+          _metrics['escrowBalance'] == null
+              ? 'Unavailable'
+              : '${_metrics['escrowBalance']} XAF',
           Icons.lock_rounded,
         ),
         _metricCard(
           'Active lots',
-          '${_metrics['activeLotsCount'] ?? 0}',
+          _metrics['activeLotsCount']?.toString() ?? 'Unavailable',
           Icons.inventory_2_rounded,
         ),
         _metricCard(
           'Total yield',
-          '${_metrics['totalYieldKg'] ?? 0} kg',
+          _metrics['totalYieldKg'] == null
+              ? 'Unavailable'
+              : '${_metrics['totalYieldKg']} kg',
           Icons.scale_rounded,
         ),
         _metricCard(
@@ -174,7 +221,7 @@ class _FarmerTelemetryScreenState extends State<FarmerTelemetryScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF171F33).withValues(alpha: 0.9),
+        color: const Color(0xFF171F33).withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: online
@@ -203,12 +250,6 @@ class _FarmerTelemetryScreenState extends State<FarmerTelemetryScreen> {
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.wifi_tethering, color: Colors.white54, size: 18),
-              const SizedBox(width: 4),
-              const Text(
-                'NB-IoT Mesh',
-                style: TextStyle(color: Colors.white54, fontSize: 11),
-              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -274,7 +315,7 @@ class _FarmerTelemetryScreenState extends State<FarmerTelemetryScreen> {
   Widget _metricCard(String label, String value, IconData icon) => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: Colors.black.withValues(alpha: 0.62),
+      color: const Color(0xFF131B2E).withValues(alpha: 0.95),
       borderRadius: BorderRadius.circular(16),
       border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
     ),
@@ -302,7 +343,7 @@ class _FarmerTelemetryScreenState extends State<FarmerTelemetryScreen> {
   Widget _nodeSearch() => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: Colors.black.withValues(alpha: 0.62),
+      color: const Color(0xFF131B2E).withValues(alpha: 0.95),
       borderRadius: BorderRadius.circular(16),
       border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
     ),
@@ -337,7 +378,7 @@ class _FarmerTelemetryScreenState extends State<FarmerTelemetryScreen> {
     margin: const EdgeInsets.only(bottom: 8),
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: Colors.black.withValues(alpha: 0.55),
+      color: const Color(0xFF131B2E).withValues(alpha: 0.95),
       borderRadius: BorderRadius.circular(12),
       border: Border.all(color: Colors.white12),
     ),
@@ -365,7 +406,7 @@ class _FarmerTelemetryScreenState extends State<FarmerTelemetryScreen> {
   Widget _messageCard(String message) => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: Colors.black.withValues(alpha: 0.62),
+      color: const Color(0xFF131B2E).withValues(alpha: 0.95),
       borderRadius: BorderRadius.circular(16),
     ),
     child: Text(message, style: const TextStyle(color: Colors.white70)),

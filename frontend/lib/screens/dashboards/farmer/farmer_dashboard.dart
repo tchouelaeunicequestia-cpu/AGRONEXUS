@@ -11,8 +11,9 @@ import 'package:frontend/screens/produce/add_produce_screen.dart';
 
 import 'farmer_listings_screen.dart';
 import 'farmer_telemetry_screen.dart';
-import 'farmer_profile_screen.dart';
 import 'farmer_escrow_screen.dart';
+import 'farmer_profile_screen.dart';
+import '../../../widgets/farmer_bottom_navigation.dart';
 
 class FarmerDashboard extends StatefulWidget {
   const FarmerDashboard({super.key});
@@ -26,7 +27,8 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
   Map<String, dynamic> _dashboardData = {};
   List<Map<String, dynamic>> _products = [];
   List<Map<String, dynamic>> _drafts = [];
-  String _locationString = 'Bafia North • Lat 4.7502° N, Lon 11.2331° E';
+  String _locationString = 'Unavailable';
+  String? _loadError;
   bool _isRefreshing = false;
   int _activeNavIndex = 0;
 
@@ -37,7 +39,10 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
   }
 
   Future<void> _fetchLiveDashboardData() async {
-    setState(() => _isRefreshing = true);
+    setState(() {
+      _isRefreshing = true;
+      _loadError = null;
+    });
     try {
       final data = await ApiService.getFarmerDashboardMetrics();
       final products = await ApiService.getFarmerProducts();
@@ -63,21 +68,39 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
         setState(() {
           _isLoading = false;
           _isRefreshing = false;
+          _loadError = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
+  }
+
+  double? get _harvestProgress {
+    final value =
+        _dashboardData['harvestProgress'] ??
+        _dashboardData['activeLotsProgress'];
+    final progress = value is num ? value.toDouble() : null;
+    if (progress == null) return null;
+    return progress > 1 ? (progress / 100).clamp(0, 1) : progress.clamp(0, 1);
   }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.currentUser;
-    final userName = user?.name?.toUpperCase() ?? 'EUNICE';
-    final userEmail = user?.email ?? 'eunice.tchouela@agronexus.io';
-    final userInitials = userName.isNotEmpty ? userName.substring(0, 1) : 'E';
+    final userName = user?.name?.trim().isNotEmpty == true
+        ? user!.name!.toUpperCase()
+        : 'FARMER';
+    final userEmail = user?.email?.trim().isNotEmpty == true
+        ? user!.email!
+        : 'Account details unavailable';
+    final userInitials = userName.substring(0, 1);
 
     return Scaffold(
       backgroundColor: Colors.black,
+      bottomNavigationBar: FarmerBottomNavigation(
+        selectedIndex: _activeNavIndex,
+        onDestinationSelected: _navigateToFarmerTab,
+      ),
       body: Stack(
         children: [
           // BOTTOM LAYER: Background Image
@@ -89,13 +112,14 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                   Container(color: const Color(0xFF0F382C)),
             ),
           ),
+          const Positioned.fill(child: ColoredBox(color: Color(0x770B1326))),
 
           // TOP LAYER: Main UI with Frosted Glass Containers
           CustomScrollView(
             slivers: [
               SliverAppBar(
                 pinned: true,
-                backgroundColor: Colors.black.withOpacity(0.6),
+                backgroundColor: const Color(0xD90B1326),
                 elevation: 0,
                 toolbarHeight: 64,
                 flexibleSpace: ClipRRect(
@@ -176,6 +200,21 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                   ),
                   const SizedBox(width: 12),
                   IconButton(
+                    icon: CircleAvatar(
+                      radius: 15,
+                      backgroundColor: const Color(0xFF4EDEA3),
+                      child: Text(
+                        userName.substring(0, 1),
+                        style: const TextStyle(
+                          color: Color(0xFF003824),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    onPressed: () => _navigateToFarmerTab(5),
+                    tooltip: 'Open profile',
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.logout_rounded, color: Colors.white),
                     onPressed: () => authProvider.logout(),
                     tooltip: 'Sign Out',
@@ -198,6 +237,46 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (_loadError != null) ...[
+                              Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.only(bottom: 14),
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF3A2024),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: const Color(0xFFFF8A80),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.error_outline_rounded,
+                                      color: Color(0xFFFF8A80),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        'Dashboard data unavailable: $_loadError',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Retry loading dashboard',
+                                      onPressed: _fetchLiveDashboardData,
+                                      icon: const Icon(
+                                        Icons.refresh_rounded,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                             ClipRRect(
                               borderRadius: BorderRadius.circular(20),
                               child: BackdropFilter(
@@ -252,16 +331,11 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                                                       ),
                                                     ),
                                                     const SizedBox(width: 6),
-                                                    const Icon(
-                                                      Icons.verified_rounded,
-                                                      color: Color(0xFF6CF8BB),
-                                                      size: 18,
-                                                    ),
                                                   ],
                                                 ),
                                                 const SizedBox(height: 2),
                                                 Text(
-                                                  'Verified Producer Account • $userEmail',
+                                                  'Producer Account • $userEmail',
                                                   style: const TextStyle(
                                                     fontSize: 12,
                                                     color: Colors.white70,
@@ -309,20 +383,12 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: Text(
-                                                'GPS Lock: $_locationString',
+                                                'Location: $_locationString',
                                                 style: const TextStyle(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w600,
                                                   color: Colors.white,
                                                 ),
-                                              ),
-                                            ),
-                                            const Text(
-                                              ' ±1.8m',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF6CF8BB),
                                               ),
                                             ),
                                           ],
@@ -445,25 +511,13 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                     ),
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Logistics dispatch requested from Bafia Hub.',
-                                          ),
-                                          behavior: SnackBarBehavior.floating,
-                                          backgroundColor: Color(0xFF006C49),
-                                        ),
-                                      );
-                                    },
+                                    onPressed: () => _navigateToFarmerTab(3),
                                     icon: const Icon(
                                       Icons.local_shipping_outlined,
                                       size: 18,
                                     ),
                                     label: const Text(
-                                      'Request Transporter',
+                                      'View Escrow Ledger',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -537,8 +591,8 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                                                   _products[i]['title']
                                                           ?.toString() ??
                                                       'Produce lot',
-                                                  '${_products[i]['availableQuantity'] ?? 0} ${_products[i]['unitType'] ?? 'kg'} Available',
-                                                  '${_products[i]['pricePerUnit'] ?? 0} XAF / ${_products[i]['unitType'] ?? 'kg'}',
+                                                  '${_products[i]['availableQuantity']?.toString() ?? 'Unavailable'} ${_products[i]['unitType'] ?? ''} Available',
+                                                  '${_products[i]['pricePerUnit']?.toString() ?? 'Unavailable'} XAF / ${_products[i]['unitType'] ?? 'unit'}',
                                                   'Active',
                                                   isDraft: false,
                                                 ),
@@ -559,8 +613,8 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                                                   _drafts[i]['title']
                                                           ?.toString() ??
                                                       'Untitled Draft',
-                                                  '${_drafts[i]['availableQuantity'] ?? 0} ${_drafts[i]['unitType'] ?? 'kg'} Available',
-                                                  '${_drafts[i]['pricePerUnit'] ?? 0} XAF / ${_drafts[i]['unitType'] ?? 'kg'}',
+                                                  '${_drafts[i]['availableQuantity']?.toString() ?? 'Unavailable'} ${_drafts[i]['unitType'] ?? ''} Available',
+                                                  '${_drafts[i]['pricePerUnit']?.toString() ?? 'Unavailable'} XAF / ${_drafts[i]['unitType'] ?? 'unit'}',
                                                   'Draft',
                                                   isDraft: true,
                                                   draftId: _drafts[i]['id']
@@ -579,7 +633,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 116),
                           ],
                         ),
                 ),
@@ -616,7 +670,9 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
               ),
               const SizedBox(height: 12),
               Text(
-                '${_dashboardData['escrowBalance'] ?? 0} XAF',
+                _dashboardData['escrowBalance'] == null
+                    ? 'Unavailable'
+                    : '${_dashboardData['escrowBalance']} XAF',
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w900,
@@ -625,18 +681,14 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
               ),
               const SizedBox(height: 6),
               const Text(
-                '85% held in escrow',
+                'Current value reported by your escrow ledger',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF6CF8BB),
+                  color: Color(0xFF4EDEA3),
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Release trigger: Buyer Q/C Signoff',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
-              ),
             ],
           ),
         ),
@@ -669,7 +721,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
               ),
               const SizedBox(height: 12),
               Text(
-                '${_dashboardData['activeLotsCount'] ?? 0} Active Lots',
+                '${_dashboardData['activeLotsCount'] ?? _products.length} Active Lots',
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w900,
@@ -678,7 +730,9 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
               ),
               const SizedBox(height: 6),
               Text(
-                '${_dashboardData['totalYieldKg'] ?? 0} kg total yield available',
+                _dashboardData['totalYieldKg'] is num
+                    ? '${_dashboardData['totalYieldKg']} kg total yield available'
+                    : 'Total yield unavailable',
                 style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFF6CF8BB),
@@ -689,7 +743,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: LinearProgressIndicator(
-                  value: 0.75,
+                  value: _harvestProgress,
                   color: const Color(0xFF6CF8BB),
                   backgroundColor: Colors.white.withOpacity(0.2),
                   minHeight: 6,
@@ -877,108 +931,24 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
             ),
           ],
         ),
-        Positioned(
-          left: 12,
-          right: 12,
-          bottom: 12,
-          child: SafeArea(
-            top: false,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.82),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: Colors.white.withOpacity(0.16)),
-              ),
-              child: NavigationBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                selectedIndex: _activeNavIndex,
-                onDestinationSelected: (index) {
-                  setState(() => _activeNavIndex = index);
-                  if (index == 1) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const FarmerListingsScreen(),
-                      ),
-                    );
-                  } else if (index == 2) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AddProduceScreen(),
-                      ),
-                    );
-                  } else if (index == 3) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const FarmerEscrowScreen(),
-                      ),
-                    );
-                  } else if (index == 4) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const FarmerTelemetryScreen(),
-                      ),
-                    );
-                  }
-                },
-                indicatorColor: const Color(0xFF16A34A),
-                labelTextStyle: const WidgetStatePropertyAll(
-                  TextStyle(color: Colors.white, fontSize: 11),
-                ),
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.dashboard_outlined, color: Colors.white70),
-                    selectedIcon: Icon(
-                      Icons.dashboard_rounded,
-                      color: Colors.white,
-                    ),
-                    label: 'Dashboard',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(
-                      Icons.inventory_2_outlined,
-                      color: Colors.white70,
-                    ),
-                    selectedIcon: Icon(
-                      Icons.inventory_2_rounded,
-                      color: Colors.white,
-                    ),
-                    label: 'Batches',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.add_box_outlined, color: Colors.white70),
-                    selectedIcon: Icon(
-                      Icons.add_box_rounded,
-                      color: Colors.white,
-                    ),
-                    label: 'List Crop',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.account_balance_wallet_outlined, color: Colors.white70),
-                    selectedIcon: Icon(
-                      Icons.account_balance_wallet_rounded,
-                      color: Colors.white,
-                    ),
-                    label: 'Escrow',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.sensors_outlined, color: Colors.white70),
-                    selectedIcon: Icon(
-                      Icons.sensors_rounded,
-                      color: Colors.white,
-                    ),
-                    label: 'IoT Silos',
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ],
+    );
+  }
+
+  void _navigateToFarmerTab(int index) {
+    if (index == 0) return;
+    setState(() => _activeNavIndex = index);
+    final Widget screen = switch (index) {
+      1 => const FarmerListingsScreen(),
+      2 => const AddProduceScreen(),
+      3 => const FarmerEscrowScreen(),
+      4 => const FarmerTelemetryScreen(),
+      5 => const FarmerProfileScreen(),
+      _ => const FarmerDashboard(),
+    };
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
     );
   }
 }

@@ -24,6 +24,10 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>AGRONEXUS uses the camera to capture harvest proof photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AGRONEXUS uses your photo library to attach harvest proof photos.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

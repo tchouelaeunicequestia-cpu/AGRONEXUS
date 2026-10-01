@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:frontend/screens/produce/add_produce_screen.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/services/draft_service.dart';
+import 'package:frontend/widgets/farmer_background_layer.dart';
+import 'package:frontend/widgets/farmer_bottom_navigation.dart';
+
+import 'farmer_dashboard.dart';
+import 'farmer_escrow_screen.dart';
+import 'farmer_telemetry_screen.dart';
+import 'farmer_profile_screen.dart';
 
 class FarmerListingsScreen extends StatefulWidget {
   const FarmerListingsScreen({super.key});
@@ -83,55 +90,85 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
       return matchesQuery && (_filter == 'All' || _filter == 'Drafts');
     }).toList();
 
-    return CustomScrollView(
-      slivers: [
-        _appBar(),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              _searchAndFilter(),
-              const SizedBox(height: 16),
-              _summaryCard(),
-              const SizedBox(height: 18),
-              if (_isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: CircularProgressIndicator(color: Color(0xFF6CF8BB)),
-                  ),
-                )
-              else if (_errorMessage != null)
-                _messageCard(_errorMessage!)
-              else ...[
-                _sectionTitle(
-                  'Published harvest lots',
-                  filteredProducts.length,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      bottomNavigationBar: FarmerBottomNavigation(
+        selectedIndex: 1,
+        onDestinationSelected: _navigateToFarmerTab,
+      ),
+      body: Stack(
+        children: [
+          const FarmerBackgroundLayer(),
+          CustomScrollView(
+            slivers: [
+              _appBar(),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 116),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _searchAndFilter(),
+                    const SizedBox(height: 16),
+                    _summaryCard(),
+                    const SizedBox(height: 18),
+                    if (_isLoading)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(40),
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF6CF8BB),
+                          ),
+                        ),
+                      )
+                    else if (_errorMessage != null)
+                      _messageCard(_errorMessage!)
+                    else ...[
+                      _sectionTitle(
+                        'Published harvest lots',
+                        filteredProducts.length,
+                      ),
+                      const SizedBox(height: 10),
+                      if (filteredProducts.isEmpty)
+                        _emptyCard(
+                          'No active lots yet. Publish your first harvest lot.',
+                        )
+                      else
+                        ...filteredProducts.map(_productCard),
+                      if (filteredDrafts.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        _sectionTitle('Drafts', filteredDrafts.length),
+                        const SizedBox(height: 10),
+                        ...filteredDrafts.map((draft) => _draftCard(draft)),
+                      ],
+                    ],
+                  ]),
                 ),
-                const SizedBox(height: 10),
-                if (filteredProducts.isEmpty)
-                  _emptyCard(
-                    'No active lots yet. Publish your first harvest lot.',
-                  )
-                else
-                  ...filteredProducts.map(_productCard),
-                if (filteredDrafts.isNotEmpty) ...[
-                  const SizedBox(height: 20),
-                  _sectionTitle('Drafts', filteredDrafts.length),
-                  const SizedBox(height: 10),
-                  ...filteredDrafts.map((draft) => _draftCard(draft)),
-                ],
-              ],
-            ]),
+              ),
+            ],
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  void _navigateToFarmerTab(int index) {
+    if (index == 1) return;
+    final Widget screen = switch (index) {
+      0 => const FarmerDashboard(),
+      2 => const AddProduceScreen(),
+      3 => const FarmerEscrowScreen(),
+      4 => const FarmerTelemetryScreen(),
+      5 => const FarmerProfileScreen(),
+      _ => const FarmerDashboard(),
+    };
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
     );
   }
 
   Widget _appBar() => SliverAppBar(
     pinned: true,
-    backgroundColor: Colors.black.withValues(alpha: 0.72),
+    backgroundColor: const Color(0xD90B1326),
     foregroundColor: Colors.white,
     title: const Text('My harvest lots'),
     actions: [
@@ -140,15 +177,20 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
         onPressed: _isLoading ? null : _loadListings,
         icon: const Icon(Icons.refresh_rounded),
       ),
+      IconButton(
+        tooltip: 'Open profile',
+        onPressed: () => _navigateToFarmerTab(5),
+        icon: const Icon(Icons.person_outline_rounded),
+      ),
     ],
   );
 
   Widget _summaryCard() => Container(
     padding: const EdgeInsets.all(18),
     decoration: BoxDecoration(
-      color: const Color(0xFF0F382C).withValues(alpha: 0.92),
+      color: const Color(0xFF171F33).withValues(alpha: 0.94),
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: const Color(0xFF6CF8BB).withValues(alpha: 0.3)),
+      border: Border.all(color: const Color(0xFF4EDEA3).withValues(alpha: 0.3)),
     ),
     child: Row(
       children: [
@@ -172,8 +214,8 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
           icon: const Icon(Icons.add, size: 18),
           label: const Text('Add'),
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF16A34A),
-            foregroundColor: Colors.white,
+            backgroundColor: const Color(0xFF10B981),
+            foregroundColor: const Color(0xFF003824),
           ),
         ),
       ],
@@ -190,7 +232,7 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
         decoration: InputDecoration(
           hintText: 'Search batch ID, crop type, or sensor cluster',
           hintStyle: const TextStyle(color: Colors.white54),
-          prefixIcon: const Icon(Icons.search, color: Color(0xFF6CF8BB)),
+          prefixIcon: const Icon(Icons.search, color: Color(0xFF4EDEA3)),
           suffixIcon: IconButton(
             tooltip: 'Clear search',
             onPressed: () {
@@ -221,7 +263,7 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
                 labelStyle: TextStyle(
                   color: _filter == filter
                       ? const Color(0xFF003824)
-                      : Colors.white70,
+                      : const Color(0xFFBAC6DA),
                   fontWeight: FontWeight.w700,
                 ),
                 side: BorderSide.none,
@@ -246,7 +288,7 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
       Text(
         '$count',
         style: const TextStyle(
-          color: Color(0xFF6CF8BB),
+          color: Color(0xFF4EDEA3),
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -256,9 +298,9 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
   Widget _productCard(Map<String, dynamic> product) => _listingCard(
     title: product['title']?.toString() ?? 'Produce lot',
     subtitle:
-        '${product['availableQuantity'] ?? 0} ${product['unitType'] ?? 'kg'} available',
+        '${product['availableQuantity']?.toString() ?? 'Unavailable'} ${product['unitType'] ?? ''} available',
     detail:
-        '${product['pricePerUnit'] ?? 0} XAF / ${product['unitType'] ?? 'kg'}',
+        '${product['pricePerUnit']?.toString() ?? 'Unavailable'} XAF / ${product['unitType'] ?? 'unit'}',
     status: 'ACTIVE',
     icon: Icons.eco_rounded,
   );
@@ -266,8 +308,9 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
   Widget _draftCard(Map<String, dynamic> draft) => _listingCard(
     title: draft['title']?.toString() ?? 'Untitled draft',
     subtitle:
-        '${draft['availableQuantity'] ?? 0} ${draft['unitType'] ?? 'kg'} planned',
-    detail: '${draft['pricePerUnit'] ?? 0} XAF / ${draft['unitType'] ?? 'kg'}',
+        '${draft['availableQuantity']?.toString() ?? 'Unavailable'} ${draft['unitType'] ?? ''} planned',
+    detail:
+        '${draft['pricePerUnit']?.toString() ?? 'Unavailable'} XAF / ${draft['unitType'] ?? 'unit'}',
     status: 'DRAFT',
     icon: Icons.edit_note_rounded,
     action: IconButton(
@@ -299,15 +342,15 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
     margin: const EdgeInsets.only(bottom: 10),
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: Colors.black.withValues(alpha: 0.62),
+      color: const Color(0xFF131B2E).withValues(alpha: 0.95),
       borderRadius: BorderRadius.circular(16),
       border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
     ),
     child: Row(
       children: [
         CircleAvatar(
-          backgroundColor: const Color(0xFF16A34A).withValues(alpha: 0.2),
-          child: Icon(icon, color: const Color(0xFF6CF8BB)),
+          backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.18),
+          child: Icon(icon, color: const Color(0xFF4EDEA3)),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -345,8 +388,8 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
                 fontWeight: FontWeight.bold,
               ),
               backgroundColor: status == 'ACTIVE'
-                  ? const Color(0xFFDCFCE7)
-                  : const Color(0xFFFEF3C7),
+                  ? const Color(0xFF174A38)
+                  : const Color(0xFF3A3120),
               side: BorderSide.none,
             ),
       ],
@@ -362,7 +405,7 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
   }) => Container(
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
-      color: Colors.black.withValues(alpha: 0.62),
+      color: const Color(0xFF131B2E).withValues(alpha: 0.95),
       borderRadius: BorderRadius.circular(16),
       border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
     ),

@@ -1,6 +1,6 @@
 // lib/screens/register_screen.dart
 import 'package:flutter/material.dart';
-import 'dart:io'; 
+import 'dart:io';
 
 import '../services/api_service.dart';
 import '../services/platform_services.dart';

@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/dashboards/shared/handover_tracking_screen.dart';
 import 'package:frontend/services/api_service.dart';
+import 'package:frontend/widgets/farmer_background_layer.dart';
+import 'package:frontend/widgets/farmer_bottom_navigation.dart';
+
+import 'farmer_dashboard.dart';
+import 'farmer_listings_screen.dart';
+import 'farmer_telemetry_screen.dart';
+import 'farmer_profile_screen.dart';
+import '../../../screens/produce/add_produce_screen.dart';
 
 class FarmerEscrowScreen extends StatefulWidget {
   const FarmerEscrowScreen({super.key});
@@ -55,67 +63,86 @@ class _FarmerEscrowScreenState extends State<FarmerEscrowScreen> {
   @override
   Widget build(BuildContext context) {
     final locked = _orders
-        .where((order) => {
-              'PENDING',
-              'TRANSPORT_QUOTE_PENDING',
-              'HELD_IN_ESCROW',
-              'READY_FOR_PICKUP',
-              'DISPATCHED',
-              'IN_TRANSIT',
-              'DELIVERED',
-            }.contains(order['status']))
+        .where(
+          (order) => {
+            'PENDING',
+            'TRANSPORT_QUOTE_PENDING',
+            'HELD_IN_ESCROW',
+            'READY_FOR_PICKUP',
+            'DISPATCHED',
+            'IN_TRANSIT',
+            'DELIVERED',
+          }.contains(order['status']),
+        )
         .fold<double>(0, (sum, order) => sum + _amount(order));
 
-    return RefreshIndicator(
-      onRefresh: _loadOrders,
-      color: const Color(0xFF6CF8BB),
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            backgroundColor: Colors.black.withValues(alpha: 0.72),
-            foregroundColor: Colors.white,
-            title: const Text('Escrow & handover ledger'),
-            actions: [
-              IconButton(
-                tooltip: 'Refresh ledger',
-                onPressed: _isLoading ? null : _loadOrders,
-                icon: const Icon(Icons.refresh_rounded),
-              ),
-            ],
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 100),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _summaryCard(locked),
-                const SizedBox(height: 20),
-                const Text(
-                  'Active escrow runs',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      bottomNavigationBar: FarmerBottomNavigation(
+        selectedIndex: 3,
+        onDestinationSelected: _navigateToFarmerTab,
+      ),
+      body: Stack(
+        children: [
+          const FarmerBackgroundLayer(),
+          RefreshIndicator(
+            onRefresh: _loadOrders,
+            color: const Color(0xFF6CF8BB),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  backgroundColor: const Color(0xD90B1326),
+                  foregroundColor: Colors.white,
+                  title: const Text('Escrow & handover ledger'),
+                  actions: [
+                    IconButton(
+                      tooltip: 'Refresh ledger',
+                      onPressed: _isLoading ? null : _loadOrders,
+                      icon: const Icon(Icons.refresh_rounded),
+                    ),
+                    IconButton(
+                      tooltip: 'Open profile',
+                      onPressed: () => _navigateToFarmerTab(5),
+                      icon: const Icon(Icons.person_outline_rounded),
+                    ),
+                  ],
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 116),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _summaryCard(locked),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Active escrow runs',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      if (_isLoading)
+                        const Padding(
+                          padding: EdgeInsets.all(36),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF6CF8BB),
+                            ),
+                          ),
+                        )
+                      else if (_error != null)
+                        _messageCard(_error!, _loadOrders)
+                      else if (_orders.isEmpty)
+                        _emptyCard()
+                      else
+                        ..._orders.map(_orderCard),
+                    ]),
                   ),
                 ),
-                const SizedBox(height: 10),
-                if (_isLoading)
-                  const Padding(
-                    padding: EdgeInsets.all(36),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF6CF8BB),
-                      ),
-                    ),
-                  )
-                else if (_error != null)
-                  _messageCard(_error!, _loadOrders)
-                else if (_orders.isEmpty)
-                  _emptyCard()
-                else
-                  ..._orders.map(_orderCard),
-              ]),
+              ],
             ),
           ),
         ],
@@ -123,10 +150,26 @@ class _FarmerEscrowScreenState extends State<FarmerEscrowScreen> {
     );
   }
 
+  void _navigateToFarmerTab(int index) {
+    if (index == 3) return;
+    final Widget screen = switch (index) {
+      0 => const FarmerDashboard(),
+      1 => const FarmerListingsScreen(),
+      2 => const AddProduceScreen(),
+      4 => const FarmerTelemetryScreen(),
+      5 => const FarmerProfileScreen(),
+      _ => const FarmerDashboard(),
+    };
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+
   Widget _summaryCard(double locked) => Container(
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
-      color: const Color(0xFF0F382C).withValues(alpha: 0.92),
+      color: const Color(0xFF171F33).withValues(alpha: 0.94),
       borderRadius: BorderRadius.circular(22),
       border: Border.all(color: const Color(0xFF6CF8BB).withValues(alpha: 0.3)),
     ),
@@ -185,7 +228,10 @@ class _FarmerEscrowScreenState extends State<FarmerEscrowScreen> {
           ),
         ),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white60, fontSize: 11),
+        ),
       ],
     ),
   );
@@ -199,7 +245,7 @@ class _FarmerEscrowScreenState extends State<FarmerEscrowScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.58),
+        color: const Color(0xFF131B2E).withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
@@ -231,7 +277,10 @@ class _FarmerEscrowScreenState extends State<FarmerEscrowScreen> {
           const SizedBox(height: 6),
           Text(
             'Escrow value: ${_money(_amount(order))}  •  Quantity: ${order['quantity'] ?? 'Unavailable'}',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           if (canDispatch) ...[
             const SizedBox(height: 12),
@@ -289,7 +338,7 @@ class _FarmerEscrowScreenState extends State<FarmerEscrowScreen> {
   Widget _messageCard(String message, VoidCallback? retry) => Container(
     padding: const EdgeInsets.all(18),
     decoration: BoxDecoration(
-      color: Colors.black.withValues(alpha: 0.55),
+      color: const Color(0xFF131B2E).withValues(alpha: 0.95),
       borderRadius: BorderRadius.circular(16),
       border: Border.all(color: Colors.white12),
     ),
