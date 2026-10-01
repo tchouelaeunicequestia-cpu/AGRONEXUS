@@ -10,7 +10,8 @@ class UserProfile {
   final String? name;
   final String? email;
   final String? role;
-  UserProfile({this.id, this.name, this.email, this.role});
+  final String? phoneNumber;
+  UserProfile({this.id, this.name, this.email, this.role, this.phoneNumber});
 }
 
 class AuthProvider extends ChangeNotifier {
@@ -53,17 +54,24 @@ class AuthProvider extends ChangeNotifier {
       _role = await _storageService.getUserRole();
       final profile = await ApiService.getCurrentUser();
       _role = profile['role']?.toString();
-      final name = profile['fullName']?.toString() ??
+      final name =
+          profile['fullName']?.toString() ??
           await _storageService.getUserName();
       final email =
           profile['email']?.toString() ?? await _storageService.getUserEmail();
-      final id = profile['userId']?.toString() ??
-          await _storageService.getUserId();
+      final id =
+          profile['userId']?.toString() ?? await _storageService.getUserId();
 
       _isAuthenticated = true;
       ApiService.globalAccessToken = accessToken;
       ApiService.globalUserId = int.tryParse(id ?? '');
-      _currentUser = UserProfile(id: id, name: name, email: email, role: _role);
+      _currentUser = UserProfile(
+        id: id,
+        name: name,
+        email: email,
+        role: _role,
+        phoneNumber: profile['phoneNumber']?.toString(),
+      );
       notifyListeners();
     } catch (_) {
       await logout();
@@ -83,6 +91,7 @@ class AuthProvider extends ChangeNotifier {
       name: authData['fullName']?.toString() ?? authData['name']?.toString(),
       email: authData['email']?.toString(),
       role: _role,
+      phoneNumber: authData['phoneNumber']?.toString(),
     );
 
     await _storageService.saveSession(
@@ -92,6 +101,24 @@ class AuthProvider extends ChangeNotifier {
       userId: _currentUser?.id,
       name: _currentUser?.name,
       email: _currentUser?.email,
+    );
+    notifyListeners();
+  }
+
+  Future<void> updateCurrentUserProfile({
+    required String fullName,
+    required String phoneNumber,
+  }) async {
+    final profile = await ApiService.updateCurrentUserProfile(
+      fullName: fullName,
+      phoneNumber: phoneNumber,
+    );
+    _currentUser = UserProfile(
+      id: profile['userId']?.toString() ?? _currentUser?.id,
+      name: profile['fullName']?.toString() ?? fullName,
+      email: profile['email']?.toString() ?? _currentUser?.email,
+      role: profile['role']?.toString() ?? _role,
+      phoneNumber: profile['phoneNumber']?.toString() ?? phoneNumber,
     );
     notifyListeners();
   }

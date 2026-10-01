@@ -1,5 +1,6 @@
 // lib/services/api_service.dart
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -71,6 +72,37 @@ class ApiService {
     throw Exception(
       'Unable to verify the current session (HTTP ${response.statusCode}).',
     );
+  }
+
+  static Future<Map<String, dynamic>> updateCurrentUserProfile({
+    required String fullName,
+    required String phoneNumber,
+  }) async {
+    final response = await authenticatedRequest(
+      '/api/v1/auth/me',
+      method: 'PUT',
+      body: {'fullName': fullName, 'phoneNumber': phoneNumber},
+    );
+    final payload = _decodeJsonObject(response.body);
+    if (response.statusCode == 200 && payload is Map<String, dynamic>) {
+      return payload;
+    }
+    throw Exception(
+      payload is Map<String, dynamic>
+          ? payload['error']?.toString() ?? 'Unable to update profile.'
+          : 'Unable to update profile (HTTP ${response.statusCode}). '
+                'Please make sure the backend is running the latest version.',
+    );
+  }
+
+  static Map<String, dynamic>? _decodeJsonObject(String body) {
+    if (body.trim().isEmpty) return null;
+    try {
+      final decoded = jsonDecode(body);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } on FormatException {
+      return null;
+    }
   }
 
   /// Register a new user role with biometric profile data and optional images
@@ -192,6 +224,8 @@ class ApiService {
         headers: headers,
         body: body != null ? jsonEncode(body) : null,
       );
+    } else if (method == 'DELETE') {
+      return await http.delete(uri, headers: headers);
     } else if (method == 'PUT') {
       return await http.put(
         uri,
@@ -310,20 +344,70 @@ class ApiService {
     return [];
   }
 
+  static Future<Set<dynamic>> getFavoriteProductIds() async {
+    final response = await authenticatedRequest('/api/v1/products/favorites');
+    if (response.statusCode != 200) {
+      throw Exception('Unable to load your favorite produce listings.');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) return <dynamic>{};
+    return decoded.toSet();
+  }
+
+  static Future<void> addFavoriteProduct(dynamic productId) async {
+    final response = await authenticatedRequest(
+      '/api/v1/products/favorites/$productId',
+      method: 'POST',
+    );
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception('Unable to save this produce listing as a favorite.');
+    }
+  }
+
+  static Future<void> removeFavoriteProduct(dynamic productId) async {
+    final response = await authenticatedRequest(
+      '/api/v1/products/favorites/$productId',
+      method: 'DELETE',
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Unable to remove this produce listing from favorites.');
+    }
+  }
+
+  /// Fetches the latest environmental readings for a storage telemetry node.
+  static Future<List<Map<String, dynamic>>> getTelemetryNodeLogs(
+    String nodeId,
+  ) async {
+    final normalizedNodeId = nodeId.trim();
+    if (normalizedNodeId.isEmpty) {
+      throw ArgumentError.value(nodeId, 'nodeId', 'A node ID is required.');
+    }
+
+    final response = await authenticatedRequest(
+      '/api/v1/telemetry/node/${Uri.encodeComponent(normalizedNodeId)}',
+    );
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      if (decoded is List) {
+        return decoded
+            .whereType<Map>()
+            .map((entry) => Map<String, dynamic>.from(entry))
+            .toList();
+      }
+    }
+    throw Exception('Unable to load telemetry for node $normalizedNodeId.');
+  }
+
   /// Fetches real-time metrics for the Agronomist dashboard
   static Future<Map<String, dynamic>> getAgronomistMetrics() async {
-    try {
-      final response = await authenticatedRequest('/api/v1/agronomist/metrics');
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+    final response = await authenticatedRequest('/api/v1/agronomist/metrics');
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map) {
+        return Map<String, dynamic>.from(decoded);
       }
-    } catch (_) {}
-    return {
-      'openAlerts': 3,
-      'ragPrecision': '99.2%',
-      'storageNodes': 24,
-      'lossPrevented': '14 Lots',
-    };
+    }
+    throw Exception('Unable to load agronomist metrics.');
   }
 
   /// Fetches real-time metrics for the Transporter dashboard
@@ -427,7 +511,10 @@ class ApiService {
   // --- PHASE 4.3: MULTI-PARTY HANDOVER & WAYPOINT METHODS ---
 
   /// 1. Farmer Dispatch Signoff
-  static Future<bool> farmerSignoffDispatch(String orderId, String token) async {
+  static Future<bool> farmerSignoffDispatch(
+    String orderId,
+    String token,
+  ) async {
     try {
       final response = await authenticatedRequest(
         '/api/v1/farmer/orders/$orderId/dispatch',
@@ -442,7 +529,10 @@ class ApiService {
   }
 
   /// 2. Transporter Delivery Confirmation
-  static Future<bool> transporterConfirmDelivery(String orderId, String token) async {
+  static Future<bool> transporterConfirmDelivery(
+    String orderId,
+    String token,
+  ) async {
     try {
       final response = await authenticatedRequest(
         '/api/v1/transporter/orders/$orderId/deliver',
@@ -509,7 +599,8 @@ class ApiService {
     if (response.statusCode == 200 || response.statusCode == 400) {
       return jsonDecode(response.body);
     }
-    throw Exception('Failed to communicate with AgroAI Assistant (Status: ${response.statusCode})');
+    throw Exception(
+      'Failed to communicate with AgroAI Assistant (Status: ${response.statusCode})',
+    );
   }
-
 }

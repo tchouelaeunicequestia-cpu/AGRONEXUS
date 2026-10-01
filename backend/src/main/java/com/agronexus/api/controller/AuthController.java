@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -264,7 +265,7 @@ public class AuthController {
             newUser.setFullName(fullName);
             newUser.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
             newUser.setPhoneNumber("+237600000000");
-            newUser.setNationalId("GOOGLE_" + System.currentTimeMillis());
+            newUser.setNationalIdHash(hash("GOOGLE_" + System.currentTimeMillis()));
             newUser.setRole(Role.BUYER);
             newUser.setIsVerified(true);
             newUser.setEmailVerified(true);
@@ -291,13 +292,47 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Authentication is required."));
         }
-        return ResponseEntity.ok(Map.of(
-                "userId", user.getId(),
-                "role", user.getRole().name(),
-                "email", user.getEmail(),
-                "fullName", user.getFullName(),
-                "isVerified", user.getIsVerified()
-        ));
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", user.getId());
+        response.put("role", user.getRole().name());
+        response.put("email", user.getEmail());
+        response.put("fullName", user.getFullName());
+        response.put("phoneNumber", user.getPhoneNumber());
+        response.put("isVerified", user.getIsVerified());
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<?> updateCurrentUser(
+            @AuthenticationPrincipal User user,
+            @RequestBody Map<String, String> payload) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Authentication is required."));
+        }
+
+        String fullName = payload.get("fullName");
+        String phoneNumber = payload.get("phoneNumber");
+        if (fullName == null || fullName.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Full name is required."));
+        }
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Phone number is required."));
+        }
+
+        user.setFullName(fullName.trim());
+        user.setPhoneNumber(phoneNumber.trim());
+        User savedUser = userRepository.save(user);
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", savedUser.getId());
+        response.put("role", savedUser.getRole().name());
+        response.put("email", savedUser.getEmail());
+        response.put("fullName", savedUser.getFullName());
+        response.put("phoneNumber", savedUser.getPhoneNumber());
+        response.put("isVerified", savedUser.getIsVerified());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/refresh")
