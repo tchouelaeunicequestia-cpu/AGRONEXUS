@@ -11,15 +11,23 @@ class FarmerListingsScreen extends StatefulWidget {
 }
 
 class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
+  final _searchController = TextEditingController();
   List<Map<String, dynamic>> _products = [];
   List<Map<String, dynamic>> _drafts = [];
   bool _isLoading = true;
   String? _errorMessage;
+  String _filter = 'All';
 
   @override
   void initState() {
     super.initState();
     _loadListings();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadListings() async {
@@ -34,8 +42,8 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
       ]);
       if (!mounted) return;
       setState(() {
-        _products = results[0] as List<Map<String, dynamic>>;
-        _drafts = results[1] as List<Map<String, dynamic>>;
+        _products = results[0];
+        _drafts = results[1];
         _isLoading = false;
       });
     } catch (error) {
@@ -57,6 +65,24 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final query = _searchController.text.trim().toLowerCase();
+    final filteredProducts = _products.where((product) {
+      final matchesQuery =
+          query.isEmpty ||
+          product.values.any(
+            (value) => value.toString().toLowerCase().contains(query),
+          );
+      return matchesQuery && (_filter == 'All' || _filter == 'Active');
+    }).toList();
+    final filteredDrafts = _drafts.where((draft) {
+      final matchesQuery =
+          query.isEmpty ||
+          draft.values.any(
+            (value) => value.toString().toLowerCase().contains(query),
+          );
+      return matchesQuery && (_filter == 'All' || _filter == 'Drafts');
+    }).toList();
+
     return CustomScrollView(
       slivers: [
         _appBar(),
@@ -64,6 +90,8 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
+              _searchAndFilter(),
+              const SizedBox(height: 16),
               _summaryCard(),
               const SizedBox(height: 18),
               if (_isLoading)
@@ -76,19 +104,22 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
               else if (_errorMessage != null)
                 _messageCard(_errorMessage!)
               else ...[
-                _sectionTitle('Published harvest lots', _products.length),
+                _sectionTitle(
+                  'Published harvest lots',
+                  filteredProducts.length,
+                ),
                 const SizedBox(height: 10),
-                if (_products.isEmpty)
+                if (filteredProducts.isEmpty)
                   _emptyCard(
                     'No active lots yet. Publish your first harvest lot.',
                   )
                 else
-                  ..._products.map(_productCard),
-                if (_drafts.isNotEmpty) ...[
+                  ...filteredProducts.map(_productCard),
+                if (filteredDrafts.isNotEmpty) ...[
                   const SizedBox(height: 20),
-                  _sectionTitle('Drafts', _drafts.length),
+                  _sectionTitle('Drafts', filteredDrafts.length),
                   const SizedBox(height: 10),
-                  ..._drafts.map((draft) => _draftCard(draft)),
+                  ...filteredDrafts.map((draft) => _draftCard(draft)),
                 ],
               ],
             ]),
@@ -149,6 +180,58 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
     ),
   );
 
+  Widget _searchAndFilter() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      TextField(
+        controller: _searchController,
+        onChanged: (_) => setState(() {}),
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          hintText: 'Search batch ID, crop type, or sensor cluster',
+          hintStyle: const TextStyle(color: Colors.white54),
+          prefixIcon: const Icon(Icons.search, color: Color(0xFF6CF8BB)),
+          suffixIcon: IconButton(
+            tooltip: 'Clear search',
+            onPressed: () {
+              _searchController.clear();
+              setState(() {});
+            },
+            icon: const Icon(Icons.close, color: Colors.white54),
+          ),
+          filled: true,
+          fillColor: const Color(0xFF060E20).withValues(alpha: 0.9),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+      const SizedBox(height: 10),
+      Wrap(
+        spacing: 8,
+        children: ['All', 'Active', 'Drafts']
+            .map(
+              (filter) => ChoiceChip(
+                label: Text(filter),
+                selected: _filter == filter,
+                onSelected: (_) => setState(() => _filter = filter),
+                selectedColor: const Color(0xFF10B981),
+                backgroundColor: const Color(0xFF171F33),
+                labelStyle: TextStyle(
+                  color: _filter == filter
+                      ? const Color(0xFF003824)
+                      : Colors.white70,
+                  fontWeight: FontWeight.w700,
+                ),
+                side: BorderSide.none,
+              ),
+            )
+            .toList(),
+      ),
+    ],
+  );
+
   Widget _sectionTitle(String title, int count) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
@@ -187,7 +270,23 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
     detail: '${draft['pricePerUnit'] ?? 0} XAF / ${draft['unitType'] ?? 'kg'}',
     status: 'DRAFT',
     icon: Icons.edit_note_rounded,
+    action: IconButton(
+      tooltip: 'Delete draft',
+      onPressed: () => _deleteDraft(draft['id']?.toString()),
+      icon: const Icon(Icons.delete_outline_rounded, color: Colors.white54),
+    ),
   );
+
+  Future<void> _deleteDraft(String? draftId) async {
+    if (draftId == null || draftId.isEmpty) return;
+    await DraftService.deleteDraft(draftId);
+    if (!mounted) return;
+    setState(
+      () => _drafts.removeWhere((draft) => draft['id']?.toString() == draftId),
+    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Draft deleted.')));
+  }
 
   Widget _listingCard({
     required String title,
@@ -195,6 +294,7 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
     required String detail,
     required String status,
     required IconData icon,
+    Widget? action,
   }) => Container(
     margin: const EdgeInsets.only(bottom: 10),
     padding: const EdgeInsets.all(16),
@@ -237,17 +337,18 @@ class _FarmerListingsScreenState extends State<FarmerListingsScreen> {
             ],
           ),
         ),
-        Chip(
-          label: Text(status),
-          labelStyle: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
-          backgroundColor: status == 'ACTIVE'
-              ? const Color(0xFFDCFCE7)
-              : const Color(0xFFFEF3C7),
-          side: BorderSide.none,
-        ),
+        action ??
+            Chip(
+              label: Text(status),
+              labelStyle: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+              backgroundColor: status == 'ACTIVE'
+                  ? const Color(0xFFDCFCE7)
+                  : const Color(0xFFFEF3C7),
+              side: BorderSide.none,
+            ),
       ],
     ),
   );

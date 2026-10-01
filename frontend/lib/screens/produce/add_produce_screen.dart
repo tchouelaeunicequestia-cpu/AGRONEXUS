@@ -1,12 +1,13 @@
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../services/api_service.dart';
 import '../../services/auth_provider.dart';
 import '../../services/draft_service.dart';
 import '../../services/image_picker_service.dart';
 import '../../services/platform_services.dart';
-import '../../services/secure_storage_service.dart';
 
 class AddProduceScreen extends StatefulWidget {
   const AddProduceScreen({super.key});
@@ -23,12 +24,15 @@ class _AddProduceScreenState extends State<AddProduceScreen>
   final _priceController = TextEditingController(text: '');
   final _descriptionController = TextEditingController();
   final _imageUrlController = TextEditingController();
+  final _storageNodeController = TextEditingController();
 
   double _quantity = 200.0;
   String _category = 'FRUITS';
   String _unitType = 'kg';
   String _selectedStorageNode = 'esp32_01';
   bool _hasIoTNode = false;
+  Map<String, String>? _liveTelemetry;
+  bool _telemetryLoading = false;
   String _selectedGrade = 'Grade A+ Export';
   int _activeProofIndex = 0;
 
@@ -51,18 +55,48 @@ class _AddProduceScreenState extends State<AddProduceScreen>
   ];
 
   final List<Map<String, String>> _cultivarSuggestions = [
-    {'label': '+ Giant Plantain', 'title': 'Organic Giant Plantain (Musa paradisiaca)', 'cat': 'FRUITS', 'price': '450'},
-    {'label': '+ Red Roma', 'title': 'Red Roma Tomatoes (Lycopersicon)', 'cat': 'VEGETABLES', 'price': '600'},
-    {'label': '+ White Maize', 'title': 'White Corn Grain (Zea mays)', 'cat': 'CEREALS', 'price': '250'},
-    {'label': '+ Sweet Cassava', 'title': 'White Sweet Cassava Tubers', 'cat': 'TUBERS', 'price': '300'},
-    {'label': '+ Raw Cocoa F3', 'title': 'Raw Fermented Cocoa Beans Grade 1', 'cat': 'COCOA', 'price': '2850'},
+    {
+      'label': '+ Giant Plantain',
+      'title': 'Organic Giant Plantain (Musa paradisiaca)',
+      'cat': 'FRUITS',
+      'price': '450',
+    },
+    {
+      'label': '+ Red Roma',
+      'title': 'Red Roma Tomatoes (Lycopersicon)',
+      'cat': 'VEGETABLES',
+      'price': '600',
+    },
+    {
+      'label': '+ White Maize',
+      'title': 'White Corn Grain (Zea mays)',
+      'cat': 'CEREALS',
+      'price': '250',
+    },
+    {
+      'label': '+ Sweet Cassava',
+      'title': 'White Sweet Cassava Tubers',
+      'cat': 'TUBERS',
+      'price': '300',
+    },
+    {
+      'label': '+ Raw Cocoa F3',
+      'title': 'Raw Fermented Cocoa Beans Grade 1',
+      'cat': 'COCOA',
+      'price': '2850',
+    },
   ];
 
   // Mutable — starts empty; url/bytes are null until farmer captures/uploads a photo
   final List<Map<String, dynamic>> _harvestProofs = [
-    {'title': 'Overview',    'sub': 'Batch Overview',    'url': null, 'bytes': null},
-    {'title': 'Stem Cut',    'sub': 'Fresh Cut Proof',   'url': null, 'bytes': null},
-    {'title': 'Scale/Weight','sub': 'Depot Weight Proof', 'url': null, 'bytes': null},
+    {'title': 'Overview', 'sub': 'Batch Overview', 'url': null, 'bytes': null},
+    {'title': 'Stem Cut', 'sub': 'Fresh Cut Proof', 'url': null, 'bytes': null},
+    {
+      'title': 'Scale/Weight',
+      'sub': 'Depot Weight Proof',
+      'url': null,
+      'bytes': null,
+    },
   ];
 
   final List<Map<String, String>> _unitTypes = [
@@ -71,39 +105,6 @@ class _AddProduceScreenState extends State<AddProduceScreen>
     {'label': 'crates (Wood Box)', 'value': 'crates'},
     {'label': 'tons (Metric Ton)', 'value': 'tons'},
   ];
-
-  final List<Map<String, String>> _storageNodes = [
-    {'value': 'esp32_01', 'label': 'ESP32 Hub #01 - Silo #4 (14.2°C & 68% RH Safe)'},
-    {'value': 'esp32_02', 'label': 'ESP32 Hub #02 - Cold Vault B (8.4°C & 85% RH Optimal)'},
-    {'value': 'esp32_03', 'label': 'LoRaWAN Node #07 - Open Depot C (24.1°C & 52% RH)'},
-  ];
-
-  Map<String, Map<String, String>> get _telemetryMetricsByNode => {
-        'esp32_01': {
-          'temp': '14.2°C',
-          'tempStatus': 'Optimal',
-          'moisture': '68% RH',
-          'moistureStatus': 'Safe Range',
-          'power': '94%',
-          'powerStatus': 'Solar Feed',
-        },
-        'esp32_02': {
-          'temp': '8.4°C',
-          'tempStatus': 'Cold Vault',
-          'moisture': '85% RH',
-          'moistureStatus': 'Optimal',
-          'power': '99%',
-          'powerStatus': 'Mains Feed',
-        },
-        'esp32_03': {
-          'temp': '24.1°C',
-          'tempStatus': 'Ambient',
-          'moisture': '52% RH',
-          'moistureStatus': 'Monitored',
-          'power': '88%',
-          'powerStatus': 'LoRa Battery',
-        },
-      };
 
   String get _dynamicBenchmark {
     switch (_category) {
@@ -150,6 +151,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
     _priceController.dispose();
     _descriptionController.dispose();
     _imageUrlController.dispose();
+    _storageNodeController.dispose();
     super.dispose();
   }
 
@@ -179,17 +181,53 @@ class _AddProduceScreenState extends State<AddProduceScreen>
           _locationDescription = pos.description;
         });
       }
+
       _showSnackBar(
         'PostGIS RTK Coordinates Locked! (${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)})',
         isError: false,
       );
     } catch (_) {
       _showSnackBar(
-        'GPS Acquisition Notice: Updated to active RTK farm gate coordinates.',
-        isError: false,
+        'Unable to acquire your current location. Please try again before publishing.',
+        isError: true,
       );
     } finally {
       if (mounted) setState(() => _isLocating = false);
+    }
+  }
+
+  Future<void> _loadSelectedTelemetry() async {
+    if (!_hasIoTNode || _selectedStorageNode.isEmpty) {
+      if (mounted) setState(() => _liveTelemetry = null);
+      return;
+    }
+    setState(() => _telemetryLoading = true);
+    try {
+      final readings = await ApiService.getTelemetryNodeLogs(
+        _selectedStorageNode,
+      );
+      final latest = readings.isEmpty ? null : readings.first;
+      if (!mounted) return;
+      setState(() {
+        _liveTelemetry = latest == null
+            ? null
+            : {
+                'temp': '${latest['temperature'] ?? '—'}°C',
+                'tempStatus': latest['alertTriggered'] == true
+                    ? 'Alert'
+                    : 'Live reading',
+                'moisture': '${latest['humidity'] ?? '—'}% RH',
+                'moistureStatus': latest['alertTriggered'] == true
+                    ? 'Check storage'
+                    : 'Live reading',
+                'power': 'Unavailable',
+                'powerStatus': 'Not reported',
+              };
+      });
+    } catch (_) {
+      if (mounted) setState(() => _liveTelemetry = null);
+    } finally {
+      if (mounted) setState(() => _telemetryLoading = false);
     }
   }
 
@@ -217,7 +255,9 @@ class _AddProduceScreenState extends State<AddProduceScreen>
   /// Called when farmer taps Take Photo or Choose Gallery for an angle slot.
   Future<void> _capturePhoto(int slotIndex, {bool fromGallery = false}) async {
     try {
-      final picked = await ImagePickerService.pickImage(fromCamera: !fromGallery);
+      final picked = await ImagePickerService.pickImage(
+        fromCamera: !fromGallery,
+      );
       if (picked != null && mounted) {
         setState(() {
           _harvestProofs[slotIndex]['url'] = picked.dataUrl;
@@ -243,9 +283,19 @@ class _AddProduceScreenState extends State<AddProduceScreen>
 
     setState(() => _isLoading = true);
     try {
-      final storage = SecureStorageService();
-      final userIdStr = await storage.getUserId();
-      final farmerId = userIdStr != null ? int.parse(userIdStr) : 1;
+      final farmerId = int.tryParse(
+        context.read<AuthProvider>().currentUser?.id ?? '',
+      );
+      if (farmerId == null) {
+        throw Exception(
+          'Your authenticated farmer account could not be identified.',
+        );
+      }
+      if (_lat == null || _lon == null) {
+        throw Exception(
+          'Your current location is required before publishing this harvest batch.',
+        );
+      }
 
       // Use first available captured photo URL, or imageUrl field, or empty string
       final capturedUrl = _harvestProofs
@@ -267,8 +317,8 @@ class _AddProduceScreenState extends State<AddProduceScreen>
           'pricePerUnit': _unitPrice,
           'unitType': _unitType,
           'availableQuantity': _quantity,
-          'latitude': _lat ?? 3.8480,
-          'longitude': _lon ?? 11.5021,
+          'latitude': _lat,
+          'longitude': _lon,
           'imageUrl': finalImageUrl,
           'farmerId': farmerId,
         },
@@ -305,9 +355,14 @@ class _AddProduceScreenState extends State<AddProduceScreen>
   Future<void> _saveDraft() async {
     setState(() => _isLoading = true);
     try {
-      final storage = SecureStorageService();
-      final userIdStr = await storage.getUserId();
-      final farmerId = userIdStr != null ? int.tryParse(userIdStr) ?? 1 : 1;
+      final farmerId = int.tryParse(
+        context.read<AuthProvider>().currentUser?.id ?? '',
+      );
+      if (farmerId == null) {
+        throw Exception(
+          'Your authenticated farmer account could not be identified.',
+        );
+      }
 
       await DraftService.saveDraft({
         'title': _titleController.text.trim().isNotEmpty
@@ -322,7 +377,10 @@ class _AddProduceScreenState extends State<AddProduceScreen>
       });
 
       if (mounted) {
-        _showSnackBar('Draft saved! Visible in your dashboard.', isError: false);
+        _showSnackBar(
+          'Draft saved! Visible in your dashboard.',
+          isError: false,
+        );
         await Future.delayed(const Duration(milliseconds: 800));
         if (mounted) Navigator.pop(context, 'draft');
       }
@@ -339,10 +397,17 @@ class _AddProduceScreenState extends State<AddProduceScreen>
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(msg, style: const TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: isError ? const Color(0xFFBA1A1A) : const Color(0xFF003820),
+          content: Text(
+            msg,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: isError
+              ? const Color(0xFFBA1A1A)
+              : const Color(0xFF003820),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       );
     }
@@ -356,14 +421,23 @@ class _AddProduceScreenState extends State<AddProduceScreen>
         ? user.name!.substring(0, 1).toUpperCase()
         : 'F';
 
-    final activeTelemetry = _telemetryMetricsByNode[_selectedStorageNode] ??
-        _telemetryMetricsByNode['esp32_01']!;
+    final activeTelemetry = _liveTelemetry ??
+        {
+          'temp': 'Unavailable',
+          'tempStatus': 'No live reading',
+          'moisture': 'Unavailable',
+          'moistureStatus': 'No live reading',
+          'power': 'Unavailable',
+          'powerStatus': 'Not reported',
+        };
 
     // Active photo data (bytes from real picker, or fallback URL)
     final activeProof = _harvestProofs[_activeProofIndex];
     final activePhotoUrl = activeProof['url'] as String?;
     final activeBytes = activeProof['bytes'] as Uint8List?;
-    final hasActivePhoto = activeBytes != null || (activePhotoUrl != null && activePhotoUrl.isNotEmpty);
+    final hasActivePhoto =
+        activeBytes != null ||
+        (activePhotoUrl != null && activePhotoUrl.isNotEmpty);
 
     return Scaffold(
       backgroundColor: const Color(0xFFE9FFED),
@@ -531,7 +605,9 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                             return Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: InkWell(
-                                onTap: () => setState(() => _category = cat['name'] as String),
+                                onTap: () => setState(
+                                  () => _category = cat['name'] as String,
+                                ),
                                 borderRadius: BorderRadius.circular(20),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
@@ -681,7 +757,8 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                           image: hasActivePhoto
                               ? DecorationImage(
                                   image: activeBytes != null
-                                      ? MemoryImage(activeBytes) as ImageProvider
+                                      ? MemoryImage(activeBytes)
+                                            as ImageProvider
                                       : NetworkImage(activePhotoUrl!),
                                   fit: BoxFit.cover,
                                 )
@@ -779,12 +856,17 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                                 top: 10,
                                 right: 10,
                                 child: InkWell(
-                                  onTap: () => _capturePhoto(_activeProofIndex, fromGallery: true),
+                                  onTap: () => _capturePhoto(
+                                    _activeProofIndex,
+                                    fromGallery: true,
+                                  ),
                                   child: Container(
                                     width: 32,
                                     height: 32,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.9),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
@@ -809,7 +891,8 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         mainAxisAlignment:
@@ -865,10 +948,15 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                         children: [
                           Expanded(
                             child: InkWell(
-                              onTap: () => _capturePhoto(_activeProofIndex, fromGallery: false),
+                              onTap: () => _capturePhoto(
+                                _activeProofIndex,
+                                fromGallery: false,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFDCF4E1),
                                   borderRadius: BorderRadius.circular(12),
@@ -898,10 +986,15 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                           const SizedBox(width: 8),
                           Expanded(
                             child: InkWell(
-                              onTap: () => _capturePhoto(_activeProofIndex, fromGallery: true),
+                              onTap: () => _capturePhoto(
+                                _activeProofIndex,
+                                fromGallery: true,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFDCF4E1),
                                   borderRadius: BorderRadius.circular(12),
@@ -933,17 +1026,26 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                       const SizedBox(height: 14),
 
                       // Harvest Angle Proofs — dynamic count label
-                      Builder(builder: (ctx) {
-                        final captured = _harvestProofs.where((p) => p['bytes'] != null || (p['url'] != null && (p['url'] as String).isNotEmpty)).length;
-                        return Text(
-                          'Harvest Angle Proofs ($captured/${_harvestProofs.length} Captured)',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF404942),
-                          ),
-                        );
-                      }),
+                      Builder(
+                        builder: (ctx) {
+                          final captured = _harvestProofs
+                              .where(
+                                (p) =>
+                                    p['bytes'] != null ||
+                                    (p['url'] != null &&
+                                        (p['url'] as String).isNotEmpty),
+                              )
+                              .length;
+                          return Text(
+                            'Harvest Angle Proofs ($captured/${_harvestProofs.length} Captured)',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF404942),
+                            ),
+                          );
+                        },
+                      ),
                       const SizedBox(height: 6),
                       Row(
                         children: List.generate(_harvestProofs.length, (idx) {
@@ -951,7 +1053,9 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                           final isSelected = _activeProofIndex == idx;
                           final thumbBytes = proof['bytes'] as Uint8List?;
                           final thumbUrl = proof['url'] as String?;
-                          final hasThumb = thumbBytes != null || (thumbUrl != null && thumbUrl.isNotEmpty);
+                          final hasThumb =
+                              thumbBytes != null ||
+                              (thumbUrl != null && thumbUrl.isNotEmpty);
 
                           return Expanded(
                             child: Padding(
@@ -980,7 +1084,8 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                                     image: hasThumb
                                         ? DecorationImage(
                                             image: thumbBytes != null
-                                                ? MemoryImage(thumbBytes) as ImageProvider
+                                                ? MemoryImage(thumbBytes)
+                                                      as ImageProvider
                                                 : NetworkImage(thumbUrl!),
                                             fit: BoxFit.cover,
                                           )
@@ -1027,8 +1132,8 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                                                   .withValues(alpha: 0.8),
                                               borderRadius:
                                                   const BorderRadius.vertical(
-                                                bottom: Radius.circular(8),
-                                              ),
+                                                    bottom: Radius.circular(8),
+                                                  ),
                                             ),
                                             child: Text(
                                               proof['title'] as String,
@@ -1090,7 +1195,9 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                                 ),
                                 const SizedBox(height: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE1FAE7),
                                     borderRadius: BorderRadius.circular(12),
@@ -1220,7 +1327,8 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                               divisions: 98,
                               activeColor: const Color(0xFF003820),
                               inactiveColor: const Color(0xFFDCF4E1),
-                              onChanged: (val) => setState(() => _quantity = val),
+                              onChanged: (val) =>
+                                  setState(() => _quantity = val),
                             ),
                             Row(
                               children: [
@@ -1296,7 +1404,10 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                     children: [
                       // Toggle row to link/unlink IoT node
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFE1FAE7),
                           borderRadius: BorderRadius.circular(12),
@@ -1308,14 +1419,19 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                               child: Row(
                                 children: [
                                   Icon(
-                                    _hasIoTNode ? Icons.sensors_rounded : Icons.sensors_off_rounded,
-                                    color: _hasIoTNode ? const Color(0xFF006C49) : const Color(0xFF64748B),
+                                    _hasIoTNode
+                                        ? Icons.sensors_rounded
+                                        : Icons.sensors_off_rounded,
+                                    color: _hasIoTNode
+                                        ? const Color(0xFF006C49)
+                                        : const Color(0xFF64748B),
                                     size: 20,
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         const Text(
                                           'Connect IoT Storage Node',
@@ -1326,8 +1442,13 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                                           ),
                                         ),
                                         Text(
-                                          _hasIoTNode ? 'Active telemetry feed linked' : 'Optional — produce listed under ambient storage',
-                                          style: const TextStyle(fontSize: 10, color: Color(0xFF404942)),
+                                          _hasIoTNode
+                                              ? 'Active telemetry feed linked'
+                                              : 'Optional — produce listed under ambient storage',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            color: Color(0xFF404942),
+                                          ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ],
@@ -1340,7 +1461,13 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                               value: _hasIoTNode,
                               activeThumbColor: const Color(0xFF003820),
                               activeTrackColor: const Color(0xFF6CF8BB),
-                              onChanged: (val) => setState(() => _hasIoTNode = val),
+                              onChanged: (val) {
+                                setState(() {
+                                  _hasIoTNode = val;
+                                  _liveTelemetry = null;
+                                });
+                                if (val) _loadSelectedTelemetry();
+                              },
                             ),
                           ],
                         ),
@@ -1351,18 +1478,26 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFDCF4E1).withValues(alpha: 0.5),
+                            color: const Color(0xFFDCF4E1)
+                                .withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: const Color(0xFFC0C9C0)),
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF006C49)),
+                              Icon(
+                                Icons.info_outline_rounded,
+                                size: 16,
+                                color: Color(0xFF006C49),
+                              ),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Standard harvest listing without IoT sensor link. Select your produce quality grade below.',
-                                  style: TextStyle(fontSize: 11, color: Color(0xFF404942)),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF404942),
+                                  ),
                                 ),
                               ),
                             ],
@@ -1380,37 +1515,61 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                           ),
                         ),
                         const SizedBox(height: 6),
+                        TextField(
+                          controller: _storageNodeController,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0B1F14),
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: 'Enter the node ID assigned to this silo',
+                            filled: true,
+                            fillColor: Color(0xFFE1FAE7),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide.none,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
+                          ),
+                          onChanged: (value) {
+                            final normalized = value.trim();
+                            if (normalized != _selectedStorageNode) {
+                              setState(() {
+                                _selectedStorageNode = normalized;
+                                _liveTelemetry = null;
+                              });
+                            }
+                          },
+                          onSubmitted: (_) => _loadSelectedTelemetry(),
+                        ),
+                        /* The node identifier is farmer-provided until the backend
+                           exposes a farmer-scoped node registry. */
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          margin: const EdgeInsets.only(top: 8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE1FAE7),
+                            color: const Color(0xFFE1FAE7).withValues(alpha: 0.6),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _selectedStorageNode,
-                              isExpanded: true,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0B1F14),
+                          child: const Padding(
+                            padding: EdgeInsets.all(10),
+                            child: Text(
+                              'Telemetry is loaded only after this node responds through the backend.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF404942),
                               ),
-                              items: _storageNodes.map((s) {
-                                return DropdownMenuItem<String>(
-                                  value: s['value'],
-                                  child: Text(s['label']!),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() => _selectedStorageNode = val);
-                                }
-                              },
                             ),
                           ),
                         ),
                         const SizedBox(height: 12),
 
+                        if (_telemetryLoading)
+                          const LinearProgressIndicator(
+                            minHeight: 2,
+                            color: Color(0xFF16A34A),
+                          ),
                         Row(
                           children: [
                             Expanded(
@@ -1462,7 +1621,8 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                             child: Padding(
                               padding: const EdgeInsets.only(right: 6.0),
                               child: InkWell(
-                                onTap: () => setState(() => _selectedGrade = grade),
+                                onTap: () =>
+                                    setState(() => _selectedGrade = grade),
                                 borderRadius: BorderRadius.circular(12),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
@@ -1479,7 +1639,8 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                                       Icon(
                                         isSelected
                                             ? Icons.verified_rounded
-                                            : Icons.check_circle_outline_rounded,
+                                            : Icons
+                                                  .check_circle_outline_rounded,
                                         size: 16,
                                         color: isSelected
                                             ? Colors.white
@@ -1536,7 +1697,8 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                             Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(14),
-                                color: const Color(0xFF003820).withValues(alpha: 0.35),
+                                color: const Color(0xFF003820)
+                                    .withValues(alpha: 0.35),
                               ),
                             ),
                             Positioned(
@@ -1698,7 +1860,9 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    _isLocating ? 'Locking...' : 'Re-calibrate GPS',
+                                    _isLocating
+                                        ? 'Locking...'
+                                        : 'Re-calibrate GPS',
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
@@ -2060,10 +2224,7 @@ class _AddProduceScreenState extends State<AddProduceScreen>
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE1FAE7),
                   borderRadius: BorderRadius.circular(12),

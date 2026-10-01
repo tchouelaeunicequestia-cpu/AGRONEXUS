@@ -80,29 +80,17 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              Center(
-                child: CircleAvatar(
-                  radius: 42,
-                  backgroundColor: const Color(0xFF16A34A),
-                  child: Text(
-                    (user?.name?.isNotEmpty == true ? user!.name![0] : 'F')
-                        .toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+              _profileHero(user),
+              const SizedBox(height: 24),
+              const Text(
+                'Account details',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 12),
-              Center(
-                child: Text(
-                  user?.email ?? 'Producer account',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-              ),
-              const SizedBox(height: 24),
               _field(
                 'Full name',
                 _nameController,
@@ -137,6 +125,15 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
                 ),
               ),
               const SizedBox(height: 28),
+              const Text(
+                'Account actions',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () => context.read<AuthProvider>().logout(),
                 icon: const Icon(Icons.logout_rounded),
@@ -154,6 +151,77 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
     );
   }
 
+  Widget _profileHero(dynamic user) {
+    final name = user?.name?.toString().trim();
+    final initial = name?.isNotEmpty == true ? name![0].toUpperCase() : 'F';
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF171F33).withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF4EDEA3).withValues(alpha: 0.28),
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 34,
+            backgroundColor: const Color(0xFF4EDEA3),
+            child: Text(
+              initial,
+              style: const TextStyle(
+                color: Color(0xFF003824),
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name?.isNotEmpty == true ? name! : 'Producer account',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  user?.email ?? '',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.agriculture_rounded,
+                      color: Color(0xFF6CF8BB),
+                      size: 15,
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'Farmer account',
+                      style: TextStyle(
+                        color: Color(0xFF6CF8BB),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _field(
     String label,
     TextEditingController controller,
@@ -164,14 +232,19 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
     decoration: _decoration(label, icon),
   );
 
-  Widget _readOnlyField(String label, String value, IconData icon) => TextField(
-    controller: TextEditingController(text: value),
-    readOnly: true,
-    style: const TextStyle(color: Colors.white70),
-    decoration: _decoration(label, icon).copyWith(
-      suffixIcon: const Icon(Icons.lock_outline_rounded, color: Colors.white38),
-    ),
-  );
+  Widget _readOnlyField(String label, String value, IconData icon) =>
+      InputDecorator(
+        decoration: _decoration(label, icon).copyWith(
+          suffixIcon: const Icon(
+            Icons.lock_outline_rounded,
+            color: Colors.white38,
+          ),
+        ),
+        child: Text(
+          value.isEmpty ? 'Not provided' : value,
+          style: const TextStyle(color: Colors.white70),
+        ),
+      );
 
   InputDecoration _decoration(String label, IconData icon) => InputDecoration(
     labelText: label,

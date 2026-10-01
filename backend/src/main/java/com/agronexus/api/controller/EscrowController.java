@@ -98,14 +98,25 @@ public class EscrowController {
                 .collect(Collectors.toList()));
     }
 
+    @GetMapping("/farmer/orders")
+    @PreAuthorize("hasRole('FARMER')")
+    public ResponseEntity<List<Map<String, Object>>> getFarmerOrders(
+            @AuthenticationPrincipal User farmer) {
+        return ResponseEntity.ok(orderRepository.findByProductFarmerId(farmer.getId()).stream()
+                .map(this::orderSummary)
+                .collect(Collectors.toList()));
+    }
+
     private Map<String, Object> orderSummary(Order order) {
         return Map.of(
+                "id", order.getId(),
                 "orderCode", order.getOrderCode(),
                 "productTitle", order.getProduct().getTitle(),
                 "quantity", order.getQuantity(),
                 "itemCost", order.getItemCost(),
                 "transportFee", order.getTransportFee(),
                 "platformServiceFee", order.getDepositBuffer(),
+                "totalEscrowAmount", order.getTotalEscrowAmount(),
                 // Retained for clients using the original response contract.
                 "depositBuffer", order.getDepositBuffer(),
                 "deliveryAddress", order.getDeliveryAddress(),

@@ -508,6 +508,22 @@ class ApiService {
     return List<Map<String, dynamic>>.from(jsonDecode(response.body));
   }
 
+  static Future<List<Map<String, dynamic>>> getFarmerEscrowOrders() async {
+    final response = await authenticatedRequest(
+      '/api/v1/escrow/farmer/orders',
+      method: 'GET',
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Unable to load your escrow ledger.');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) return <Map<String, dynamic>>[];
+    return decoded
+        .whereType<Map>()
+        .map((entry) => Map<String, dynamic>.from(entry))
+        .toList();
+  }
+
   // --- PHASE 4.3: MULTI-PARTY HANDOVER & WAYPOINT METHODS ---
 
   /// 1. Farmer Dispatch Signoff

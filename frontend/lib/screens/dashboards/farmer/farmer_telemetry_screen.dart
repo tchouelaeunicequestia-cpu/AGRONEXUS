@@ -84,19 +84,7 @@ class _FarmerTelemetryScreenState extends State<FarmerTelemetryScreen> {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         sliver: SliverList(
           delegate: SliverChildListDelegate([
-            const Text(
-              'Storage health at a glance',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Monitor the latest readings used by your farmer dashboard.',
-              style: TextStyle(color: Colors.white70),
-            ),
+            _siloHeader(),
             const SizedBox(height: 18),
             if (_isLoading)
               const Center(
@@ -176,6 +164,112 @@ class _FarmerTelemetryScreenState extends State<FarmerTelemetryScreen> {
 
   String _valueOrUnavailable(dynamic value, String suffix) =>
       value == null ? 'Unavailable' : '$value$suffix';
+
+  Widget _siloHeader() {
+    final online = _metrics['telemetryAvailable'] == true;
+    final nodeId = _metrics['telemetryNodeId']?.toString();
+    final facility = _metrics['storageFacilityName']?.toString();
+    final hasAlert = _metrics['telemetryAlert'] == true;
+    final alertMessage = _metrics['telemetryAlertMessage']?.toString();
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF171F33).withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: online
+              ? const Color(0xFF4EDEA3).withValues(alpha: 0.35)
+              : Colors.white12,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.circle,
+                size: 10,
+                color: online ? const Color(0xFF4EDEA3) : Colors.amber,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                online ? 'NODE ONLINE' : 'WAITING FOR NODE',
+                style: TextStyle(
+                  color: online ? const Color(0xFF4EDEA3) : Colors.amber,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.1,
+                ),
+              ),
+              const Spacer(),
+              const Icon(Icons.wifi_tethering, color: Colors.white54, size: 18),
+              const SizedBox(width: 4),
+              const Text(
+                'NB-IoT Mesh',
+                style: TextStyle(color: Colors.white54, fontSize: 11),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Farm Storage Silos',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(
+                Icons.warehouse_outlined,
+                color: Color(0xFF6CF8BB),
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                facility?.isNotEmpty == true
+                    ? facility!
+                    : 'Storage facility not identified',
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ],
+          ),
+          if (nodeId?.isNotEmpty == true) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Node $nodeId',
+              style: const TextStyle(color: Colors.white54, fontSize: 11),
+            ),
+          ],
+          if (hasAlert) ...[
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.amber,
+                  size: 17,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    alertMessage?.isNotEmpty == true
+                        ? alertMessage!
+                        : 'Storage conditions require attention.',
+                    style: const TextStyle(color: Colors.amber, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   Widget _metricCard(String label, String value, IconData icon) => Container(
     padding: const EdgeInsets.all(14),
