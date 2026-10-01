@@ -7,6 +7,9 @@ import 'package:frontend/services/auth_provider.dart';
 import 'package:frontend/services/draft_service.dart';
 import 'package:frontend/services/platform_services.dart';
 import 'package:frontend/screens/produce/add_produce_screen.dart';
+import 'farmer_listings_screen.dart';
+import 'farmer_telemetry_screen.dart';
+import 'farmer_profile_screen.dart';
 
 class FarmerDashboard extends StatefulWidget {
   const FarmerDashboard({super.key});
@@ -22,6 +25,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
   List<Map<String, dynamic>> _drafts = [];
   String _locationString = 'Bafia North • Lat 4.7502° N, Lon 11.2331° E';
   bool _isRefreshing = false;
+  int _activeNavIndex = 0;
 
   @override
   void initState() {
@@ -83,8 +87,11 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
           ),
           
           // TOP LAYER: Main UI with Frosted Glass Containers
-          CustomScrollView(
-            slivers: [
+          IndexedStack(
+            index: _activeNavIndex,
+            children: [
+              CustomScrollView(
+                slivers: [
               SliverAppBar(
                 pinned: true,
                 backgroundColor: Colors.black.withOpacity(0.6),
@@ -120,11 +127,11 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                           style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         Text('IoT Silo Telemetry & Escrow', style: TextStyle(color: Colors.white70, fontSize: 11)),
-                      ],
-                    ),
-                  ],
-                ),
-                actions: [
+                          ],
+                        ),
+                  ],
+                ),
+                actions: [
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 14),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

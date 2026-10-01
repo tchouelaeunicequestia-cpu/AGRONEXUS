@@ -144,6 +144,7 @@ class _BuyerTelemetryScreenState extends State<BuyerTelemetryScreen> {
       ),
       child: TextField(
         controller: _nodeController,
+        onChanged: (_) => setState(() {}),
         textInputAction: TextInputAction.search,
         onSubmitted: (_) => _loadTelemetry(),
         decoration: InputDecoration(
